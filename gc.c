@@ -35,7 +35,17 @@ void trigger_gc()
 
 void copy_objs()
 {
-	
+	int from_space = to_space;
+	to_space ^= 1;
+	int from_i = HEAP_SIZE * from_space;
+	int to_j = HEAP_SIZE * to_space;
+	int from_n = HEAP_SIZE + (HEAP_SIZE * from_space);
+
+
+	while(from_i< from_n && heap[from_i]!= NULL_DATA){
+		heap[to_j++] = heap[from_i++];
+		heap[to_j++] = heap[from_i++];
+	}
 }
 
 //------------------------------------------------------------------------------------------
@@ -78,6 +88,10 @@ void print_heap()
 {
 	int i=HEAP_SIZE * to_space;
 	int space_n = HEAP_SIZE + (HEAP_SIZE * to_space);
+	if(to_space)
+		printf("from %d on:\n", HEAP_SIZE);
+	else
+		printf("form 0 on:\n");
 	while(i<space_n && heap[i]!= NULL_DATA){
 		switch(heap[i]){
 			case CONST_INT_DATA:
