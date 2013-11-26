@@ -7,7 +7,16 @@
 #define CONST_INT_DATA 2
 #define CONST_PTR_DATA 3
 
-int heap[2*HEAP_SIZE] = {0};
+typedef struct node{
+	unsigned char tag;
+	union {
+		int number;
+		int ptr;
+		int fwd_ptr;
+	};
+} Node;
+
+Node heap[2*HEAP_SIZE] = {0};
 int from_hp = 0, to_hp = HEAP_SIZE;
 
 int roots[ROOTS_N];
@@ -39,18 +48,15 @@ void gc()
 };
 
 int evacuate(int i){
-	if(heap[i]== FWD_PTR)	//check whether already evacuated
-		return heap[i+1];
+	if(heap[i].tag == FWD_PTR)	//check whether already evacuated
+		return heap[i].fwd_ptr;
 	else {
 		//evacuate
-		int fwd_ptr_value = to_hp;
+		heap[to_hp] = heap[i];
+		heap[i].tag = FWD_PTR;
+		heap[i].fwd_ptr = to_hp;
 
-		heap[to_hp++] = heap[i];
-		heap[i++] = FWD_PTR;
-		heap[to_hp++] = heap[i];
-		heap[i++] = fwd_ptr_value;
-
-		return fwd_ptr_value;
+		return to_hp++;
 	}
 };
 
@@ -65,13 +71,13 @@ void scaveneging()
 {
 	int i=HEAP_SIZE;
 	while(i<to_hp){
-		if(heap[i]==CONST_PTR_DATA){
-			int fwd_ptr_value = heap[i+1];
+		if(heap[i].tag==CONST_PTR_DATA){
+			int fwd_ptr_value = heap[i].fwd_ptr;
 			if(fwd_ptr_value<HEAP_SIZE){
-				heap[i+1] = evacuate(heap[i+1]);
+				heap[i].ptr = evacuate(heap[i].fwd_ptr);
 			}
 		}
-		i+=2;
+		i++;
 	}
 };
 
@@ -83,17 +89,19 @@ void scaveneging()
 
 int add_int_data(int number)
 {
-	int index = from_hp;
-	heap[from_hp++] = CONST_INT_DATA;
-	heap[from_hp++] = number;
-	return index;
+	Node node;
+	node.tag = CONST_INT_DATA;
+	node.number = number;
+	heap[from_hp] = node;
+	return from_hp++;
 }
 
 int add_ptr_data(int ptr){
-	int index = from_hp;
-	heap[from_hp++] = CONST_PTR_DATA;
-	heap[from_hp++] = ptr;
-	return index;
+	Node node;
+	node.tag=CONST_PTR_DATA;
+	node.ptr = ptr;
+	heap[from_hp] = node;
+	return from_hp++;
 }
 
 void add_root(int index){
@@ -136,18 +144,18 @@ int main(void)
 void print_heap(int i, int hn)
 {
 	while(i<hn){
-		switch(heap[i]){
+		switch(heap[i].tag){
 			case FWD_PTR:
-				printf("Forward ptr: %d\n", heap[i+1]);
+				printf("Forward ptr: %d\n", heap[i].fwd_ptr);
 				break;
 			case CONST_INT_DATA:
-				printf("INTEGER: %d\n", heap[i+1]);
+				printf("INTEGER: %d\n", heap[i].number);
 				break;
 			case CONST_PTR_DATA:
-				printf("POINTER: %d\n", heap[i+1]);
+				printf("POINTER: %d\n", heap[i].ptr);
 				break;
 		}
-		i+=2;
+		i++;
 	}
 }
 
@@ -175,6 +183,6 @@ void test_case2() //scavenging
 {
 	int ptr = add_int_data(10);
 	add_root(add_ptr_data(ptr));
-	add_root(add_int_data(30));
-	add_root(ptr);
+	add_root(add_int_data(20));
+	add_root(add_ptr_data(ptr));
 };
