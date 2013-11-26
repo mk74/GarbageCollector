@@ -9,7 +9,6 @@
 
 int heap[2*HEAP_SIZE] = {0};
 int from_hp = 0, to_hp = HEAP_SIZE;
-//evacuation(int *node)
 //scavenging
 
 int roots[ROOTS_N];
@@ -17,6 +16,7 @@ int roots_i=0;
 
 void trigger_gc();
 void copy_objs();
+int evacuate(int i);
 
 int add_data(int number);
 void add_root(int index);
@@ -29,15 +29,14 @@ void test_case1();
 // Garbage collector
 //------------------------------------------------------------------------------------------
 
-int evacuate(int from_i){
-	int to_evacuate = from_i;
+
+int evacuate(int i){
 	int fwd_ptr_value = to_hp;
 
-	heap[to_hp++] = heap[from_i++];
-	heap[to_hp++] = heap[from_i++];
-
-	heap[to_evacuate]=FWD_PTR;
-	heap[to_evacuate+1]=fwd_ptr_value;
+	heap[to_hp++] = heap[i];
+	heap[i++] = FWD_PTR;
+	heap[to_hp++] = heap[i];
+	heap[i++] = fwd_ptr_value;
 
 	return fwd_ptr_value;
 };
@@ -54,16 +53,18 @@ void trigger_gc()
 void copy_objs()
 {
 	int i=0;
-
 	while(i<from_hp){
 		evacuate(i);
 		i+=2;
 	}
 }
 
+
 //------------------------------------------------------------------------------------------
 // Initializing data
 //------------------------------------------------------------------------------------------
+
+
 int add_data(int number)
 {
 	int index = from_hp;
