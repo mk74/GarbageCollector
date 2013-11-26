@@ -7,7 +7,8 @@
 #define CONST_INT_DATA 1
 
 int heap[2*HEAP_SIZE] = {0};
-int hp=0;
+int hp = 0;
+int to_space = 0;
 //evacuation(int *node)
 //scavenging
 
@@ -75,8 +76,9 @@ int main(void)
 
 void print_heap()
 {
-	int i=0;
-	while(i<HEAP_SIZE && heap[i]!= NULL_DATA){
+	int i=HEAP_SIZE * to_space;
+	int space_n = HEAP_SIZE + (HEAP_SIZE * to_space);
+	while(i<space_n && heap[i]!= NULL_DATA){
 		switch(heap[i]){
 			case CONST_INT_DATA:
 				printf("INTEGER: %d\n", heap[i+1]);
