@@ -14,9 +14,32 @@ int hp=0;
 int roots[ROOTS_N];
 int roots_i=0;
 
+void trigger_gc();
+void copy_objs();
+
+int add_data(int number);
+void add_root(int index);
+
 void print_heap();
 void test_case1();
 
+
+//------------------------------------------------------------------------------------------
+// Garbage collector
+//------------------------------------------------------------------------------------------
+void trigger_gc()
+{
+	copy_objs();
+}
+
+void copy_objs()
+{
+	
+}
+
+//------------------------------------------------------------------------------------------
+// Initializing data
+//------------------------------------------------------------------------------------------
 int add_data(int number)
 {
 	int index = hp;
@@ -30,15 +53,16 @@ void add_root(int index){
 	roots_i++;
 }
 
-void trigger_gc()
-{
 
-}
+//------------------------------------------------------------------------------------------
+// Main function
+//------------------------------------------------------------------------------------------
+
 
 int main(void)
 {
 	test_case1();
-	// trigger_gc();
+	trigger_gc();
 	print_heap();
 	return 1;
 }
