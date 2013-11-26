@@ -30,7 +30,7 @@ int evacuate(int i);
 void traverse_roots();
 void scaveneging();
 
-int add_data(char type, int value);
+int add_node(char type, int value);
 int add_int_data(int number);
 void add_root(int index);
 
@@ -97,11 +97,11 @@ void scaveneging()
 
 int add_int_data(int number)
 {
-	return add_data(CONST_INT_DATA, number);
+	return add_node(CONST_INT_DATA, number);
 }
 
 int add_ptr_data(int ptr){
-	return add_data(PTR_DATA, ptr);
+	return add_node(PTR_DATA, ptr);
 }
 
 int add_str_data(char *str){
@@ -117,12 +117,12 @@ int add_str_data(char *str){
 int add_range_data(int ptr1, int ptr2)
 {
 	int old_from_hp = from_hp;
-	add_data(RANGE_DATA, ptr1);
-	add_data(RANGE_DATA, ptr2);
+	add_node(RANGE_DATA, ptr1);
+	add_node(RANGE_DATA, ptr2);
 	return old_from_hp;
 }
 
-int add_data(char type, int value){
+int add_node(char type, int value){
 	Node node = {type, value};
 	heap[from_hp] = node;
 	return from_hp++;
