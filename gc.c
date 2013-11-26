@@ -63,6 +63,7 @@ int evacuate(int i){
 		heap[i].tag = FWD_PTR;
 		heap[i].fwd_ptr = old_to_hp;
 
+		//data, which occupies more than one node
 		if(heap[old_to_hp].tag == RANGE_DATA)
 			heap[to_hp++] = heap[++i];
 
