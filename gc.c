@@ -13,8 +13,7 @@ int from_hp = 0, to_hp = HEAP_SIZE;
 int roots[ROOTS_N];
 int roots_i=0;
 
-void trigger_gc();
-void copy_objs();
+void gc();
 int evacuate(int i);
 void traverse_roots();
 void scaveneging();
@@ -33,6 +32,11 @@ void test_case2();
 // Garbage collector
 //------------------------------------------------------------------------------------------
 
+void gc()
+{
+	traverse_roots();
+	scaveneging();
+};
 
 int evacuate(int i){
 	if(heap[i]== FWD_PTR)	//check whether already evacuated
@@ -48,12 +52,6 @@ int evacuate(int i){
 
 		return fwd_ptr_value;
 	}
-};
-
-void trigger_gc()
-{
-	traverse_roots();
-	scaveneging();
 };
 
 void traverse_roots()
@@ -73,15 +71,6 @@ void scaveneging()
 				heap[i+1] = evacuate(heap[i+1]);
 			}
 		}
-		i+=2;
-	}
-};
-
-void copy_objs()
-{
-	int i=0;
-	while(i<from_hp){
-		evacuate(i);
 		i+=2;
 	}
 };
@@ -126,7 +115,7 @@ int main(void)
 	printf("roots:\n");
 	print_roots();
 
-	trigger_gc();
+	gc();
 
 	printf("\n\nAfter:\n");
 	printf("from_space:\n");
