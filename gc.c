@@ -59,13 +59,14 @@ void trigger_gc()
 void traverse_roots()
 {
 	int i;
-	for(i=0; i< roots_i;i++)
+	for(i=0; i<roots_i; i++)
 		roots[i] = evacuate(roots[i]);
 };
 
 void scaveneging()
 {
-
+	// int i;
+	// for(i=0; i<from_hp; i++)
 };
 
 void copy_objs()
