@@ -8,6 +8,8 @@
 #define CCONST_STR 3
 #define CPTR 4
 #define CRANGE 5
+#define CDATA_HEAD 6
+#define CDATA_ND 7
 
 typedef struct node{
 	unsigned char tag;
@@ -16,6 +18,7 @@ typedef struct node{
 		int ptr;
 		int fwd_ptr;
 		char str[8];
+		int constructor;
 	};
 } Node;
 
@@ -67,8 +70,14 @@ int evacuate(int i){
 		heap[i].fwd_ptr = old_to_hp;
 
 		//data, which occupies more than one node
+		//ranges
 		if(heap[old_to_hp].tag == CRANGE)
 			heap[to_hp++] = heap[++i];
+
+		//data
+		if(heap[old_to_hp].tag == CDATA_HEAD)
+			while(heap[++i].tag == CDATA_ND)
+				heap[to_hp++] = heap[i];
 
 		return old_to_hp;
 	}
@@ -85,7 +94,7 @@ void scaveneging()
 {
 	int i=HEAP_SIZE;
 	while(i<to_hp){
-		if(heap[i].tag == CPTR || heap[i].tag == CRANGE)
+		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND)
 			if(heap[i].fwd_ptr<HEAP_SIZE)
 				heap[i].ptr = evacuate(heap[i].fwd_ptr);
 		i++;
@@ -128,8 +137,10 @@ int add_range(int ptr1, int ptr2)
 int add_data(int c, int n, int *ptrs)
 {
 	int old_from_hp = from_hp;
-	//for(int )
-	//add_node(CRANGE, ptr1);
+	int i;
+	add_node(CDATA_HEAD, c);
+	for(i=0; i<n; i++)
+		add_node(CDATA_ND, ptrs[i]);
 	return old_from_hp;
 }
 
@@ -152,7 +163,7 @@ void add_root(int index){
 
 int main(void)
 {
-	test_case4();
+	test_case5();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -179,6 +190,7 @@ int main(void)
 void print_heap(int i, int hn)
 {
 	while(i<hn){
+		printf("%d:", i);
 		switch(heap[i].tag){
 			case CFWD_PTR:
 				printf("Forward ptr: %d\n", heap[i].fwd_ptr);
@@ -195,6 +207,12 @@ void print_heap(int i, int hn)
 			case CRANGE:
 				printf("Range: %d %d\n", heap[i].ptr, heap[i+1].ptr);
 				i++;
+				break;
+			case CDATA_HEAD:
+				printf("Data constructor: %d, ", heap[i].constructor);
+				while(heap[++i].tag == CDATA_ND)
+					printf("node: %d, ", heap[i].ptr);
+				printf("\n");
 				break;
 		}
 		i++;
@@ -240,4 +258,12 @@ void test_case4() //range data
 	int ptr1 = add_int(10);
 	int ptr2 = add_int(20);
 	add_root(add_range(ptr1, ptr2));
+}
+
+void test_case5() //data
+{
+	int ptrs[5], i;
+	for(i=0; i<5; i++)
+		ptrs[i] = add_int(10 +i);
+	add_root(add_data(7, 5, ptrs));
 }
