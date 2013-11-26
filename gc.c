@@ -71,11 +71,9 @@ void scaveneging()
 {
 	int i=HEAP_SIZE;
 	while(i<to_hp){
-		if(heap[i].tag==CONST_PTR_DATA){
-			if(heap[i].fwd_ptr<HEAP_SIZE){
+		if(heap[i].tag==CONST_PTR_DATA)
+			if(heap[i].fwd_ptr<HEAP_SIZE)
 				heap[i].ptr = evacuate(heap[i].fwd_ptr);
-			}
-		}
 		i++;
 	}
 };
