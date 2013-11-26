@@ -5,8 +5,9 @@
 #define NULL_DATA 0
 #define FWD_PTR 1
 #define CONST_INT_DATA 2
-#define CONST_PTR_DATA 3
-#define CONST_STR_DATA 4
+#define CONST_STR_DATA 3
+#define PTR_DATA 4
+#define RANGE_DATA 5
 
 typedef struct node{
 	unsigned char tag;
@@ -29,6 +30,7 @@ int evacuate(int i);
 void traverse_roots();
 void scaveneging();
 
+int add_data(char type, int value);
 int add_int_data(int number);
 void add_root(int index);
 
@@ -37,6 +39,8 @@ void print_roots();
 
 void test_case1();
 void test_case2();
+void test_case3();
+void test_case4();
 
 
 //------------------------------------------------------------------------------------------
@@ -54,11 +58,15 @@ int evacuate(int i){
 		return heap[i].fwd_ptr;
 	else {
 		//evacuate
-		heap[to_hp] = heap[i];
+		int old_to_hp = to_hp;
+		heap[to_hp++] = heap[i];
 		heap[i].tag = FWD_PTR;
-		heap[i].fwd_ptr = to_hp;
+		heap[i].fwd_ptr = old_to_hp;
 
-		return to_hp++;
+		if(heap[old_to_hp].tag == RANGE_DATA)
+			heap[to_hp++] = heap[++i];
+
+		return old_to_hp;
 	}
 };
 
@@ -73,7 +81,7 @@ void scaveneging()
 {
 	int i=HEAP_SIZE;
 	while(i<to_hp){
-		if(heap[i].tag==CONST_PTR_DATA)
+		if(heap[i].tag == PTR_DATA || heap[i].tag == RANGE_DATA)
 			if(heap[i].fwd_ptr<HEAP_SIZE)
 				heap[i].ptr = evacuate(heap[i].fwd_ptr);
 		i++;
@@ -88,15 +96,11 @@ void scaveneging()
 
 int add_int_data(int number)
 {
-	Node node = {CONST_INT_DATA, number};
-	heap[from_hp] = node;
-	return from_hp++;
+	return add_data(CONST_INT_DATA, number);
 }
 
 int add_ptr_data(int ptr){
-	Node node = {CONST_PTR_DATA, ptr};
-	heap[from_hp] = node;
-	return from_hp++;
+	return add_data(PTR_DATA, ptr);
 }
 
 int add_str_data(char *str){
@@ -105,6 +109,20 @@ int add_str_data(char *str){
 	node.tag = CONST_STR_DATA;
 	for(i=0; i<8; i++)
 		node.str[i] = str[i];
+	heap[from_hp] = node;
+	return from_hp++;
+}
+
+int add_range_data(int ptr1, int ptr2)
+{
+	int old_from_hp = from_hp;
+	add_data(RANGE_DATA, ptr1);
+	add_data(RANGE_DATA, ptr2);
+	return old_from_hp;
+}
+
+int add_data(char type, int value){
+	Node node = {type, value};
 	heap[from_hp] = node;
 	return from_hp++;
 }
@@ -122,7 +140,7 @@ void add_root(int index){
 
 int main(void)
 {
-	test_case3();
+	test_case4();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -156,11 +174,15 @@ void print_heap(int i, int hn)
 			case CONST_INT_DATA:
 				printf("INTEGER: %d\n", heap[i].number);
 				break;
-			case CONST_PTR_DATA:
+			case PTR_DATA:
 				printf("POINTER: %d\n", heap[i].ptr);
 				break;
 			case CONST_STR_DATA:
 				printf("String: %s\n", heap[i].str);
+				break;
+			case RANGE_DATA:
+				printf("Range: %d %d\n", heap[i].ptr, heap[i+1].ptr);
+				i++;
 				break;
 		}
 		i++;
@@ -199,4 +221,11 @@ void test_case3() //string data
 {
 	add_root(add_str_data("maciek"));
 	add_str_data("kasia");
+}
+
+void test_case4() //range data
+{
+	int ptr1 = add_int_data(10);
+	int ptr2 = add_int_data(20);
+	add_root(add_range_data(ptr1, ptr2));
 }
