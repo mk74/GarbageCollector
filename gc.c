@@ -113,11 +113,13 @@ int add_int(int number)
 	return add_node(CCONST_INT, number);
 }
 
-int add_ptr(int ptr){
+int add_ptr(int ptr)
+{
 	return add_node(CPTR, ptr);
 }
 
-int add_str(char *str){
+int add_str(char *str)
+{
 	int i;
 	Node node;
 	node.tag = CCONST_STR;
@@ -145,13 +147,15 @@ int add_data(int c, int n, int *ptrs)
 	return old_from_hp;
 }
 
-int add_node(char type, int value){
+int add_node(char type, int value)
+{
 	Node node = {type, value};
 	heap[from_hp] = node;
 	return from_hp++;
 }
 
-void add_root(int index){
+void add_root(int index)
+{
 	roots[roots_i] = index;
 	roots_i++;
 }
