@@ -72,8 +72,7 @@ void scaveneging()
 	int i=HEAP_SIZE;
 	while(i<to_hp){
 		if(heap[i].tag==CONST_PTR_DATA){
-			int fwd_ptr_value = heap[i].fwd_ptr;
-			if(fwd_ptr_value<HEAP_SIZE){
+			if(heap[i].fwd_ptr<HEAP_SIZE){
 				heap[i].ptr = evacuate(heap[i].fwd_ptr);
 			}
 		}
@@ -89,17 +88,13 @@ void scaveneging()
 
 int add_int_data(int number)
 {
-	Node node;
-	node.tag = CONST_INT_DATA;
-	node.number = number;
+	Node node = {CONST_INT_DATA, number};
 	heap[from_hp] = node;
 	return from_hp++;
 }
 
 int add_ptr_data(int ptr){
-	Node node;
-	node.tag=CONST_PTR_DATA;
-	node.ptr = ptr;
+	Node node = {CONST_PTR_DATA, ptr};
 	heap[from_hp] = node;
 	return from_hp++;
 }
