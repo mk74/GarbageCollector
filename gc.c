@@ -6,6 +6,7 @@
 #define FWD_PTR 1
 #define CONST_INT_DATA 2
 #define CONST_PTR_DATA 3
+#define CONST_STR_DATA 4
 
 typedef struct node{
 	unsigned char tag;
@@ -13,6 +14,7 @@ typedef struct node{
 		int number;
 		int ptr;
 		int fwd_ptr;
+		char str[8];
 	};
 } Node;
 
@@ -97,6 +99,16 @@ int add_ptr_data(int ptr){
 	return from_hp++;
 }
 
+int add_str_data(char *str){
+	int i;
+	Node node;
+	node.tag = CONST_STR_DATA;
+	for(i=0; i<8; i++)
+		node.str[i] = str[i];
+	heap[from_hp] = node;
+	return from_hp++;
+}
+
 void add_root(int index){
 	roots[roots_i] = index;
 	roots_i++;
@@ -110,7 +122,7 @@ void add_root(int index){
 
 int main(void)
 {
-	test_case2();
+	test_case3();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -147,6 +159,9 @@ void print_heap(int i, int hn)
 			case CONST_PTR_DATA:
 				printf("POINTER: %d\n", heap[i].ptr);
 				break;
+			case CONST_STR_DATA:
+				printf("String: %s\n", heap[i].str);
+				break;
 		}
 		i++;
 	}
@@ -179,3 +194,9 @@ void test_case2() //scavenging
 	add_root(add_int_data(20));
 	add_root(add_ptr_data(ptr));
 };
+
+void test_case3() //string data
+{
+	add_root(add_str_data("maciek"));
+	add_str_data("kasia");
+}
