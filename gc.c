@@ -17,11 +17,15 @@ int roots_i=0;
 void trigger_gc();
 void copy_objs();
 int evacuate(int i);
+void traverse_roots();
+void scaveneging();
 
 int add_data(int number);
 void add_root(int index);
 
 void print_heap();
+void print_roots();
+
 void test_case1();
 
 
@@ -31,24 +35,38 @@ void test_case1();
 
 
 int evacuate(int i){
-	int fwd_ptr_value = to_hp;
+	if(heap[i]== FWD_PTR)	//check whether already evacuated
+		return heap[i+1];
+	else {
+		//evacuate
+		int fwd_ptr_value = to_hp;
 
-	heap[to_hp++] = heap[i];
-	heap[i++] = FWD_PTR;
-	heap[to_hp++] = heap[i];
-	heap[i++] = fwd_ptr_value;
+		heap[to_hp++] = heap[i];
+		heap[i++] = FWD_PTR;
+		heap[to_hp++] = heap[i];
+		heap[i++] = fwd_ptr_value;
 
-	return fwd_ptr_value;
+		return fwd_ptr_value;
+	}
 };
 
 void trigger_gc()
 {
-	//prepare_spaces
-	//traverse_roots
-		//evacuation
-	//scavenege
-	copy_objs();
-}
+	traverse_roots();
+	scaveneging();
+};
+
+void traverse_roots()
+{
+	int i;
+	for(i=0; i< roots_i;i++)
+		roots[i] = evacuate(roots[i]);
+};
+
+void scaveneging()
+{
+
+};
 
 void copy_objs()
 {
@@ -57,7 +75,7 @@ void copy_objs()
 		evacuate(i);
 		i+=2;
 	}
-}
+};
 
 
 //------------------------------------------------------------------------------------------
@@ -89,6 +107,8 @@ int main(void)
 	test_case1();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
+	printf("roots:\n");
+	print_roots();
 
 	trigger_gc();
 
@@ -97,6 +117,8 @@ int main(void)
 	print_heap(0, from_hp);
 	printf("to_space:\n");
 	print_heap(HEAP_SIZE, to_hp);
+	printf("roots:\n");
+	print_roots();
 	return 1;
 }
 
@@ -119,6 +141,13 @@ void print_heap(int i, int hn)
 		}
 		i+=2;
 	}
+}
+
+void print_roots()
+{
+	int i;
+	for(i=0; i<roots_i; i++)
+		printf("Root -> %d\n", roots[i]);
 }
 
 
