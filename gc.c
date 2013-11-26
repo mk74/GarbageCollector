@@ -98,7 +98,7 @@ int add_ptr_data(int ptr){
 }
 
 void add_root(int index){
-	roots[roots_i]=index;
+	roots[roots_i] = index;
 	roots_i++;
 }
 
