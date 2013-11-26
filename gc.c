@@ -8,8 +8,7 @@
 #define CONST_INT_DATA 2
 
 int heap[2*HEAP_SIZE] = {0};
-int hp = 0;
-int to_space = 0;
+int from_hp = 0, to_hp = HEAP_SIZE;
 //evacuation(int *node)
 //scavenging
 
@@ -32,35 +31,33 @@ void test_case1();
 
 int evacuate(int from_i){
 	int to_evacuate = from_i;
-	int fwd_ptr_value = hp;
+	int fwd_ptr_value = to_hp;
 
-	heap[hp++] = heap[from_i++];
-	heap[hp++] = heap[from_i++];
+	heap[to_hp++] = heap[from_i++];
+	heap[to_hp++] = heap[from_i++];
 
 	heap[to_evacuate]=FWD_PTR;
 	heap[to_evacuate+1]=fwd_ptr_value;
-	
+
 	return fwd_ptr_value;
 };
 
 void trigger_gc()
 {
+	//prepare_spaces
+	//traverse_roots
+		//evacuation
+	//scavenege
 	copy_objs();
 }
 
 void copy_objs()
 {
-	int from_space = to_space;
-	to_space ^= 1;
-	hp = HEAP_SIZE * to_space;
+	int i=0;
 
-	int from_i = HEAP_SIZE * from_space;
-	int from_n = HEAP_SIZE + (HEAP_SIZE * from_space);
-
-
-	while(from_i< from_n && heap[from_i]!= NULL_DATA){
-		evacuate(from_i);
-		from_i+=2;
+	while(i<from_hp){
+		evacuate(i);
+		i+=2;
 	}
 }
 
@@ -69,9 +66,9 @@ void copy_objs()
 //------------------------------------------------------------------------------------------
 int add_data(int number)
 {
-	int index = hp;
-	heap[hp++] = CONST_INT_DATA;
-	heap[hp++] = number;
+	int index = from_hp;
+	heap[from_hp++] = CONST_INT_DATA;
+	heap[from_hp++] = number;
 	return index;
 }
 
@@ -89,10 +86,16 @@ void add_root(int index){
 int main(void)
 {
 	test_case1();
+	printf("Before:\nfrom_space:\n");
+	print_heap(0, from_hp);
+
 	trigger_gc();
-	print_heap();
-	to_space^=1;
-	print_heap();
+
+	printf("\n\nAfter:\n");
+	printf("from_space:\n");
+	print_heap(0, from_hp);
+	printf("to_space:\n");
+	print_heap(HEAP_SIZE, to_hp);
 	return 1;
 }
 
@@ -102,15 +105,9 @@ int main(void)
 //------------------------------------------------------------------------------------------
 
 
-void print_heap()
+void print_heap(int i, int hn)
 {
-	int i=HEAP_SIZE * to_space;
-	int space_n = HEAP_SIZE + (HEAP_SIZE * to_space);
-	if(to_space)
-		printf("from %d on:\n", HEAP_SIZE);
-	else
-		printf("form 0 on:\n");
-	while(i<space_n && heap[i]!= NULL_DATA){
+	while(i<hn){
 		switch(heap[i]){
 			case FWD_PTR:
 				printf("Forward ptr: %d\n", heap[i+1]);
