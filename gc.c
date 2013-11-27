@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #define HEAP_SIZE  30
 #define ROOTS_N 10
 
@@ -10,6 +11,7 @@
 #define CRANGE 5
 #define CDATA_HEAD 6
 #define CDATA_ND 7
+#define CCONST_BOOL 8
 
 typedef struct node{
 	unsigned char tag;
@@ -19,6 +21,7 @@ typedef struct node{
 		int fwd_ptr;
 		char str[8];
 		int constructor;
+		bool bool_value;
 	};
 } Node;
 
@@ -34,6 +37,7 @@ void traverse_roots();
 void scaveneging();
 
 int add_node(char type, int value);
+int add_bool(bool value);
 int add_int(int number);
 int add_ptr(int ptr);
 int add_str(char[]);
@@ -71,6 +75,7 @@ int evacuate(int i){
 		heap[i].fwd_ptr = old_to_hp;
 
 		//data, which occupies more than one node
+
 		//ranges
 		if(heap[old_to_hp].tag == CRANGE)
 			heap[to_hp++] = heap[++i];
@@ -139,12 +144,17 @@ int add_range(int ptr1, int ptr2)
 
 int add_data(int c, int n, int *ptrs)
 {
-	int old_from_hp = from_hp;
-	int i;
+	int i, old_from_hp = from_hp;
 	add_node(CDATA_HEAD, c);
 	for(i=0; i<n; i++)
 		add_node(CDATA_ND, ptrs[i]);
 	return old_from_hp;
+}
+
+int add_bool(bool value){
+	Node node = {CCONST_BOOL, value};
+	heap[from_hp] = node;
+	return from_hp++;
 }
 
 int add_node(char type, int value)
@@ -168,7 +178,7 @@ void add_root(int index)
 
 int main(void)
 {
-	test_case5();
+	test_case6();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -219,6 +229,13 @@ void print_heap(int i, int hn)
 					printf("node: %d, ", heap[i].ptr);
 				printf("\n");
 				break;
+			case CCONST_BOOL:
+				if(heap[i].bool_value)
+					printf("Boolean: true\n");
+				else
+					printf("Boolean: false\n");
+			default:
+				printf("\n");
 		}
 		i++;
 	}
@@ -271,4 +288,9 @@ void test_case5() //data
 	for(i=0; i<5; i++)
 		ptrs[i] = add_int(10 +i);
 	add_root(add_data(7, 5, ptrs));
+}
+
+void test_case6()
+{
+	add_root(add_bool(true));
 }
