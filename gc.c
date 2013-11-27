@@ -14,6 +14,9 @@
 #define CDATA_HEAD 6
 #define CDATA_ND 7
 #define CCONST_BOOL 8
+#define CLAMBDA_ID 9
+#define CLAMBDA_N 10
+#define CLAMBDA_ARG 11
 
 typedef struct node{
 	unsigned char tag;
@@ -45,6 +48,9 @@ int add_int(int number);
 int add_ptr(int ptr);
 int add_str(char[]);
 int add_range(int ptr1, int ptr2);
+int add_data(int c, int n, int *ptrs);
+int add_lambda(int id, int n, int *ptrs);
+
 void add_root(int index);
 
 void print_heap();
@@ -56,6 +62,7 @@ void test_case3();
 void test_case4();
 void test_case5();
 void test_case6();
+void test_case7();
 
 
 //------------------------------------------------------------------------------------------
@@ -89,6 +96,14 @@ int evacuate(int i){
 		if(heap[old_to_hp].tag == CDATA_HEAD)
 			while(heap[++i].tag == CDATA_ND)
 				heap[to_hp++] = heap[i];
+
+		//lambda
+		if(heap[old_to_hp].tag == CLAMBDA_ID){
+			int end = heap[++i].number;
+			heap[to_hp++] = heap[i];
+			for(; i<end; i++)
+				heap[to_hp++] = heap[i];
+		}
 
 		return old_to_hp;
 	}
@@ -166,7 +181,18 @@ int add_data(int c, int n, int *ptrs)
 	return old_from_hp;
 }
 
-int add_bool(bool value){
+int add_lambda(int id, int n, int *ptrs)
+{
+	int i, old_from_hp = from_hp;
+	add_node(CLAMBDA_ID, id);
+	add_node(CLAMBDA_N, n);
+	for(i=0; i<n; i++)
+		add_node(CLAMBDA_ARG, ptrs[i]);
+	return old_from_hp;
+}
+
+int add_bool(bool value)
+{
 	Node node = {CCONST_BOOL, value};
 	heap[from_hp] = node;
 	return from_hp++;
@@ -193,7 +219,7 @@ void add_root(int index)
 
 int main(void)
 {
-	test_case3();
+	test_case7();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -249,6 +275,14 @@ void print_heap(int i, int hn)
 					printf("Boolean: true\n");
 				else
 					printf("Boolean: false\n");
+			case CLAMBDA_ID:
+				printf("Lambda function id: %d, ", heap[i].number);
+				printf("n: %d, ", heap[++i].number);
+				int end = i + heap[i].number;
+				for(; i<end; i++)
+					printf("arg ptr: %d, ", heap[i].ptr);
+				printf("\n");
+				break;
 			default:
 				printf("\n");
 		}
@@ -305,7 +339,15 @@ void test_case5() //data
 	add_root(add_data(7, 5, ptrs));
 }
 
-void test_case6()
+void test_case6() //bool
 {
 	add_root(add_bool(true));
+}
+
+void test_case7() //lambda expression
+{
+	int ptrs[5], i;
+	for(i=0; i<5; i++)
+		ptrs[i] = add_int(10 +i);
+	add_root(add_lambda(7, 5, ptrs));
 }
