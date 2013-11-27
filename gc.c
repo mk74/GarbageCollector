@@ -1,5 +1,7 @@
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
 #define HEAP_SIZE  30
 #define ROOTS_N 10
 
@@ -19,7 +21,7 @@ typedef struct node{
 		int number;
 		int ptr;
 		int fwd_ptr;
-		char str[8];
+		char *str;
 		int constructor;
 		bool bool_value;
 	};
@@ -35,6 +37,7 @@ void gc();
 int evacuate(int i);
 void traverse_roots();
 void scaveneging();
+void look_back();
 
 int add_node(char type, int value);
 int add_bool(bool value);
@@ -63,6 +66,7 @@ void gc()
 {
 	traverse_roots();
 	scaveneging();
+	look_back();
 };
 
 int evacuate(int i){
@@ -108,6 +112,17 @@ void scaveneging()
 	}
 };
 
+void look_back(){
+	int i = 0;
+	while(i<from_hp){
+		if(heap[i].tag == CCONST_STR){
+			free(heap[i].str);
+			heap[i].str = NULL;
+		}
+		i++;
+	}
+};
+
 
 //------------------------------------------------------------------------------------------
 // Initializing data
@@ -129,8 +144,7 @@ int add_str(char *str)
 	int i;
 	Node node;
 	node.tag = CCONST_STR;
-	for(i=0; i<8; i++)
-		node.str[i] = str[i];
+	node.str = strdup(str);
 	heap[from_hp] = node;
 	return from_hp++;
 }
@@ -179,7 +193,7 @@ void add_root(int index)
 
 int main(void)
 {
-	test_case6();
+	test_case3();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
