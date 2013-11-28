@@ -40,7 +40,7 @@ Node* evacuate(Node *node);
 void traverse_roots();
 int traverse_other_ptrs();
 void scaveneging();
-void look_back();
+void traverse_free();
 
 Node* add_node(char type, void* value);
 Node* add_bool(bool value);
@@ -84,8 +84,7 @@ void gc()
 	int old_to_hp = traverse_other_ptrs();
 	if(old_to_hp != to_hp)
 		scaveneging(old_to_hp);
-
-	look_back();
+	traverse_free();
 };
 
 Node* evacuate(Node *node)
@@ -186,7 +185,7 @@ void scaveneging(int i)
 	}
 };
 
-void look_back()
+void traverse_free()
 {
 	int i = 0;
 	while(i<from_hp){
