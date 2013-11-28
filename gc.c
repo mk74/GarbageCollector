@@ -17,6 +17,7 @@
 #define CLAMBDA_ID 9
 #define CLAMBDA_N 10
 #define CLAMBDA_ARG 11
+#define CSOFT_PTR 12
 
 typedef struct node{
 	unsigned char tag;
@@ -33,12 +34,13 @@ typedef struct node{
 Node heap[2*HEAP_SIZE] = {0};
 int from_hp = 0, to_hp = HEAP_SIZE;
 
-int roots[ROOTS_N];
-int roots_i=0;
+int roots[ROOTS_N], soft_ptrs[ROOTS_N];
+int roots_i=0, soft_ptr_i=0;
 
 void gc();
 int evacuate(int i);
 void traverse_roots();
+void traverse_soft_ptrs();
 void scaveneging();
 void look_back();
 
@@ -55,6 +57,7 @@ void add_root(int index);
 
 void print_heap();
 void print_roots();
+void print_soft_ptrs();
 
 void test_case1();
 void test_case2();
@@ -63,6 +66,7 @@ void test_case4();
 void test_case5();
 void test_case6();
 void test_case7();
+void test_case8();
 
 
 //------------------------------------------------------------------------------------------
@@ -72,7 +76,9 @@ void test_case7();
 void gc()
 {
 	traverse_roots();
-	scaveneging();
+	scaveneging(HEAP_SIZE);
+	traverse_soft_ptrs();
+
 	look_back();
 };
 
@@ -116,11 +122,31 @@ void traverse_roots()
 		roots[i] = evacuate(roots[i]);
 };
 
-void scaveneging()
+void traverse_soft_ptrs()
+{
+	int i;
+	for(i=0; i<soft_ptr_i; i++){
+		int ptr = heap[soft_ptrs[i]].ptr;
+		if(heap[ptr].tag == CFWD_PTR){ //something else was referring to that node
+			heap[soft_ptrs[i]].ptr = heap[ptr].ptr;
+		}else
+			heap[soft_ptrs[i]].ptr = CNULL;
+	}
+};
+
+void scaveneging(int i)
 {
 	while(i<to_hp){
 		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND)
 			heap[i].ptr = evacuate(heap[i].fwd_ptr);
+
+		//soft pointers
+		if(heap[i].tag == CSOFT_PTR){
+			if(heap[heap[i].ptr].tag == CFWD_PTR)
+				heap[i].ptr = evacuate(heap[i].fwd_ptr);
+			else
+				soft_ptrs[soft_ptr_i++]=i;
+		}
 		i++;
 	}
 };
@@ -150,6 +176,10 @@ int add_int(int number)
 int add_ptr(int ptr)
 {
 	return add_node(CPTR, ptr);
+}
+
+int add_soft_ptr(int ptr){
+	return add_node(CSOFT_PTR, ptr);
 }
 
 int add_str(char *str)
@@ -217,13 +247,14 @@ void add_root(int index)
 
 int main(void)
 {
-	test_case7();
+	test_case8();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
 	print_roots();
 
 	gc();
+
 
 	printf("\n\nAfter:\n");
 	printf("from_space:\n");
@@ -232,6 +263,8 @@ int main(void)
 	print_heap(HEAP_SIZE, to_hp);
 	printf("roots:\n");
 	print_roots();
+	printf("soft pointers:\n");
+	print_soft_ptrs();
 	return 1;
 }
 
@@ -281,6 +314,9 @@ void print_heap(int i, int hn)
 					printf("arg ptr: %d, ", heap[i].ptr);
 				printf("\n");
 				break;
+			case CSOFT_PTR:
+				printf("Soft pointer: %d\n", heap[i].ptr);
+				break;
 			default:
 				printf("\n");
 		}
@@ -295,6 +331,12 @@ void print_roots()
 		printf("Root -> %d\n", roots[i]);
 }
 
+void print_soft_ptrs()
+{
+	int i;
+	for(i=0; i<soft_ptr_i; i++)
+		printf("Soft ptr -> %d\n", soft_ptrs[i]);
+}
 
 //------------------------------------------------------------------------------------------
 // Test cases
@@ -348,4 +390,14 @@ void test_case7() //lambda expression
 	for(i=0; i<5; i++)
 		ptrs[i] = add_int(10 +i);
 	add_root(add_lambda(7, 5, ptrs));
+}
+
+void test_case8() //soft pointers
+{
+	int ptr1 = add_int(10);
+	int ptr2 = add_int(11);
+	int ptr3 = add_int(12);
+	add_root(add_soft_ptr(ptr1));
+	add_root(ptr1);
+	add_root(add_soft_ptr(ptr3));
 }
