@@ -165,7 +165,7 @@ void scaveneging(int i)
 
 		//finilized phantom pointers
 		if(heap[i].tag == CPHANTOM_PTR_F){
-			heap[i].ptr = 0;
+			heap[i].ptr = -1;
 			finilized_ptrs[finilized_ptr_i++]=i;
 		}
 		i++;
