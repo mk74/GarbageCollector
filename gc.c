@@ -93,7 +93,7 @@ Node* evacuate(Node *node){
 		//evacuate
 		// int old_to_hp = to_hp;
 		heap[to_hp].tag = node->tag;
-		heap[to_hp].value = node->value; //XXX!
+		heap[to_hp].value = node->value;
 		node->tag = CFWD_PTR;
 		node->value = &(heap[to_hp]);
 
@@ -212,12 +212,6 @@ Node* add_ptr(Node *ptr)
 Node* add_str(char *str)
 {
 	return add_node(CCONST_STR, (void *)strdup(str));	
-	// int i;
-	// Node node;
-	// node.tag = CCONST_STR;
-	// node.value = strdup(str);
-	// heap[from_hp] = node;
-	// return from_hp++;
 }
 
 // int add_range(int ptr1, int ptr2)
