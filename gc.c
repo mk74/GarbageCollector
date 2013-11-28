@@ -50,7 +50,7 @@ Node* add_ptr(Node *ptr);
 Node* add_str(char[]);
 Node* add_range(Node* node1, Node* node2);
 Node* add_data(intptr_t c, int n, Node **nodes);
-int add_lambda(int id, int n, int *ptrs);
+Node* add_lambda(intptr_t id, intptr_t n, Node **nodes);
 
 void add_root(Node *ptr);
 void finilize_ptr(int ptr);
@@ -117,13 +117,18 @@ Node* evacuate(Node *node){
 			}
 		}
 
-		// //lambda
-		// if(heap[old_to_hp].tag == CLAMBDA_ID){
-		// 	int end = heap[++i].number;
-		// 	heap[to_hp++] = heap[i];
-		// 	for(; i<end; i++)
-		// 		heap[to_hp++] = heap[i];
-		// }
+		//lambda
+		if(head_node->tag == CLAMBDA_ID){
+			Node *next_node = (node +1);
+			int end = (intptr_t)next_node->value, i;
+			heap[to_hp].tag = next_node->tag;
+			heap[to_hp++].value = next_node->value;
+			for(i=0; i<end; i++){
+				next_node = (next_node + 1);
+				heap[to_hp].tag = next_node->tag;
+				heap[to_hp++].value = next_node->value;
+			}
+		}
 
 		return head_node;
 	}
@@ -157,7 +162,8 @@ void traverse_roots()
 void scaveneging(int i)
 {
 	while(i<to_hp){
-		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND || heap[i].tag == CPHANTOM_PTR_NF)
+		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND 
+		   || heap[i].tag == CPHANTOM_PTR_NF || heap[i].tag == CLAMBDA_ARG)
 			heap[i].value = evacuate(heap[i].value);
 
 		// //weak/soft pointers
@@ -237,15 +243,15 @@ Node* add_data(intptr_t c, int n, Node **nodes)
 	return head_node;
 }
 
-// int add_lambda(int id, int n, int *ptrs)
-// {
-// 	int i, old_from_hp = from_hp;
-// 	add_node(CLAMBDA_ID, id);
-// 	add_node(CLAMBDA_N, n);
-// 	for(i=0; i<n; i++)
-// 		add_node(CLAMBDA_ARG, ptrs[i]);
-// 	return old_from_hp;
-// }
+Node* add_lambda(intptr_t id, intptr_t n, Node **nodes)
+{
+	int i;
+	Node *head_node=add_node(CLAMBDA_ID, (void*)id);
+	add_node(CLAMBDA_N, (void *)n);
+	for(i=0; i<n; i++)
+		add_node(CLAMBDA_ARG, nodes[i]);
+	return head_node;
+}
 
 Node* add_bool(bool value)
 {
@@ -278,7 +284,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case5();
+	test_case7();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -341,14 +347,16 @@ void print_heap(int i, int hn)
 				else
 					printf("Boolean: false\n");
 				break;
-			// case CLAMBDA_ID:
-			// 	printf("Lambda function id: %d, ", heap[i].number);
-			// 	printf("n: %d, ", heap[++i].number);
-			// 	int end = i + heap[i].number;
-			// 	for(; i<end; i++)
-			// 		printf("arg ptr: %d, ", heap[i].ptr);
-			// 	printf("\n");
-			// 	break;
+			case CLAMBDA_ID:
+				printf("Lambda function id: %ld, ", (intptr_t)heap[i].value);
+				printf("n: %ld, ", (intptr_t)heap[++i].value);
+				int end = i + (intptr_t)heap[i].value;
+				i++;
+				for(; i<=end; i++)
+					printf("arg ptr: %p, ", heap[i].value);
+				i--;
+				printf("\n");
+				break;
 			// case CWEAK_PTR:
 			// 	printf("Weak pointer: %d\n", heap[i].ptr);
 			// 	break;
@@ -439,13 +447,14 @@ void test_case6() //bool
 	add_root(add_bool(true));
 }
 
-// void test_case7() //lambda expression
-// {
-// 	int ptrs[5], i;
-// 	for(i=0; i<5; i++)
-// 		ptrs[i] = add_int(10 +i);
-// 	add_root(add_lambda(7, 5, ptrs));
-// }
+void test_case7() //lambda expression
+{
+	int i;
+	Node* nodes[5];
+	for(i=0; i<5; i++)
+		nodes[i] = add_int(10 +i);
+	add_root(add_lambda(7, 5, nodes));
+}
 
 // void test_case8() //weak pointers
 // {
