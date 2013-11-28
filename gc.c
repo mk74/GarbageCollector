@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #define HEAP_SIZE  30
@@ -25,14 +26,7 @@
 
 typedef struct node{
 	unsigned char tag;
-	union {
-		int number;
-		struct node *ptr;
-		struct node *fwd_ptr;
-		char *str;
-		int constructor;
-		bool bool_value;
-	};
+	void *value;
 } Node;
 
 Node heap[2*HEAP_SIZE] = {0};
@@ -49,10 +43,10 @@ int traverse_other_ptrs();
 void scaveneging();
 void look_back();
 
-Node* add_node(char type, int value);
+Node* add_node(char type, void* value);
 int add_bool(bool value);
-Node* add_int(int number);
-Node* add_ptr(int ptr);
+Node* add_int(intptr_t number);
+Node* add_ptr(Node *ptr);
 int add_str(char[]);
 int add_range(int ptr1, int ptr2);
 int add_data(int c, int n, int *ptrs);
@@ -94,14 +88,14 @@ void gc()
 
 Node* evacuate(Node *node){
 	if(node->tag == CFWD_PTR)	//check whether already evacuated
-		return node->fwd_ptr;
+		return node->value;
 	else {
 		//evacuate
 		// int old_to_hp = to_hp;
 		heap[to_hp].tag = node->tag;
-		heap[to_hp].number = node->number; //XXX!
+		heap[to_hp].value = node->value; //XXX!
 		node->tag = CFWD_PTR;
-		node->fwd_ptr = &(heap[to_hp]);
+		node->value = &(heap[to_hp]);
 
 		return &(heap[to_hp++]);
 
@@ -157,7 +151,7 @@ void scaveneging(int i)
 {
 	while(i<to_hp){
 		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND || heap[i].tag == CPHANTOM_PTR_NF)
-			heap[i].ptr = evacuate(heap[i].fwd_ptr);
+			heap[i].value = evacuate(heap[i].value);
 
 		// //weak/soft pointers
 		// if(heap[i].tag == CWEAK_PTR || heap[i].tag == CSOFT_PTR){
@@ -176,16 +170,16 @@ void scaveneging(int i)
 	}
 };
 
-void look_back(){
-	int i = 0;
-	while(i<from_hp){
-		if(heap[i].tag == CCONST_STR){
-			free(heap[i].str);
-			heap[i].str = NULL;
-		}
-		i++;
-	}
-};
+// void look_back(){
+// 	int i = 0;
+// 	while(i<from_hp){
+// 		if(heap[i].tag == CCONST_STR){
+// 			free(heap[i].str);
+// 			heap[i].str = NULL;
+// 		}
+// 		i++;
+// 	}
+// };
 
 
 //------------------------------------------------------------------------------------------
@@ -193,15 +187,15 @@ void look_back(){
 //------------------------------------------------------------------------------------------
 
 
-Node* add_int(int number)
+Node* add_int(intptr_t number)
 {
-	return add_node(CCONST_INT, number);
+	return add_node(CCONST_INT, (void *)number);
 }
 
-Node* add_ptr(int ptr)
-{
-	return add_node(CPTR, ptr);
-}
+// Node* add_ptr(Node *ptr)
+// {
+// 	return add_node(CPTR, ptr);
+// }
 
 // int add_soft_ptr(int ptr){
 // 	return add_node(CSOFT_PTR, ptr);
@@ -259,7 +253,7 @@ Node* add_ptr(int ptr)
 // 	return from_hp++;
 // }
 
-Node* add_node(char type, int value)
+Node* add_node(char type, void *value)
 {
 	Node node = {type, value};
 	heap[from_hp] = node;
@@ -320,10 +314,10 @@ void print_heap(int i, int hn)
 		printf("%d:%p:", i, &(heap[i]));
 		switch(heap[i].tag){
 			case CFWD_PTR:
-				printf("Forward ptr: %p\n", heap[i].fwd_ptr);
+				printf("Forward ptr: %p\n", heap[i].value);
 				break;
 			case CCONST_INT:
-				printf("INTEGER: %d\n", heap[i].number);
+				printf("INTEGER: %ld\n", (intptr_t)heap[i].value);
 				break;
 			// case CPTR:
 			// 	printf("POINTER: %d\n", heap[i].ptr);
@@ -412,7 +406,7 @@ void test_case1() //traversing roots
 
 // void test_case2() //scavenging
 // {
-// 	int ptr = add_int(10);
+// 	Node *ptr = add_int(10);
 // 	add_root(add_ptr(ptr));
 // 	add_root(add_int(20));
 // 	add_root(add_ptr(ptr));
