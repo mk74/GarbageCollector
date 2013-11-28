@@ -32,7 +32,6 @@ typedef struct node{
 Node heap[2*HEAP_SIZE] = {0};
 int from_hp = 0, to_hp = HEAP_SIZE;
 
-//int roots[ROOTS_N], other_ptrs[ROOTS_N], finilized_ptrs[ROOTS_N];
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N];
 int roots_i=0, soft_ptr_i=0, finilized_ptr_i=0;
 
@@ -87,7 +86,8 @@ void gc()
 	look_back();
 };
 
-Node* evacuate(Node *node){
+Node* evacuate(Node *node)
+{
 	if(node->tag == CFWD_PTR)	//check whether already evacuated
 		return node->value;
 	else {
@@ -150,10 +150,10 @@ int traverse_other_ptrs()
 		if(node->tag == CFWD_PTR) //something else was referring to that node
 			other_ptrs[i]->value = node->value;
 		else{
-			// int left_mem = 2 * HEAP_SIZE - to_hp;
-			// if(heap[other_ptrs[i]].tag == CSOFT_PTR && left_mem > LOW_MEM_THRESHOLD){
-			// 	heap[other_ptrs[i]].ptr = evacuate(ptr);
-			// }else
+			int left_mem = 2 * HEAP_SIZE - to_hp;
+			if(other_ptrs[i]->tag == CSOFT_PTR && left_mem > LOW_MEM_THRESHOLD){
+				other_ptrs[i]->value = evacuate(node);
+			}else
 				other_ptrs[i]-> value = CNULL;
 		}
 	}
@@ -184,7 +184,8 @@ void scaveneging(int i)
 	}
 };
 
-void look_back(){
+void look_back()
+{
 	int i = 0;
 	while(i<from_hp){
 		if(heap[i].tag == CCONST_STR){
@@ -211,11 +212,13 @@ Node* add_ptr(Node *node)
 	return add_node(CPTR, node);
 }
 
-// int add_soft_ptr(int ptr){
-// 	return add_node(CSOFT_PTR, ptr);
-// }
+Node* add_soft_ptr(Node *node)
+{
+	return add_node(CSOFT_PTR, node);
+}
 
-Node* add_weak_ptr(Node *node){
+Node* add_weak_ptr(Node *node)
+{
 	return add_node(CWEAK_PTR, node);
 }
 
@@ -285,7 +288,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case3();
+	test_case9();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -468,13 +471,13 @@ void test_case8() //weak pointers
 	add_root(add_weak_ptr(node3));
 }
 
-// void test_case9() //soft pointers
-// {
-// 	int i;
-// 	for(i=0; i<7; i++){
-// 		add_root(add_soft_ptr(add_int(10 +i)));
-// 	}
-// }
+void test_case9() //soft pointers
+{
+	int i;
+	for(i=0; i<7; i++){
+		add_root(add_soft_ptr(add_int(10 +i)));
+	}
+}
 
 // void test_case10() //phantom pointers
 // {
