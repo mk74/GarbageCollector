@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define HEAP_SIZE  30
+#define LOW_MEM_THRESHOLD 20
 #define ROOTS_N 10
 
 #define CNULL 0
@@ -18,6 +19,7 @@
 #define CLAMBDA_N 10
 #define CLAMBDA_ARG 11
 #define CWEAK_PTR 12
+#define CSOFT_PTR 13
 
 typedef struct node{
 	unsigned char tag;
@@ -40,7 +42,7 @@ int roots_i=0, soft_ptr_i=0;
 void gc();
 int evacuate(int i);
 void traverse_roots();
-void traverse_other_ptrs();
+int traverse_other_ptrs();
 void scaveneging();
 void look_back();
 
@@ -67,7 +69,7 @@ void test_case5();
 void test_case6();
 void test_case7();
 void test_case8();
-
+void test_case9();
 
 //------------------------------------------------------------------------------------------
 // Garbage collector
@@ -77,7 +79,9 @@ void gc()
 {
 	traverse_roots();
 	scaveneging(HEAP_SIZE);
-	traverse_other_ptrs();
+	int old_to_hp = traverse_other_ptrs();
+	if(old_to_hp != to_hp)
+		scaveneging(old_to_hp);
 
 	look_back();
 };
@@ -122,16 +126,22 @@ void traverse_roots()
 		roots[i] = evacuate(roots[i]);
 };
 
-void traverse_other_ptrs()
+int traverse_other_ptrs()
 {
-	int i;
+	int i, old_to_hp= to_hp;
 	for(i=0; i<soft_ptr_i; i++){
 		int ptr = heap[other_ptrs[i]].ptr;
-		if(heap[ptr].tag == CFWD_PTR){ //something else was referring to that node
+		if(heap[ptr].tag == CFWD_PTR) //something else was referring to that node
 			heap[other_ptrs[i]].ptr = heap[ptr].ptr;
-		}else
-			heap[other_ptrs[i]].ptr = CNULL;
+		else{
+			int left_mem = 2 * HEAP_SIZE - to_hp;
+			if(heap[other_ptrs[i]].tag == CSOFT_PTR && left_mem > LOW_MEM_THRESHOLD){
+				heap[other_ptrs[i]].ptr = evacuate(ptr);
+			}else
+				heap[other_ptrs[i]].ptr = CNULL;
+		}
 	}
+	return old_to_hp;
 };
 
 void scaveneging(int i)
@@ -140,8 +150,8 @@ void scaveneging(int i)
 		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND)
 			heap[i].ptr = evacuate(heap[i].fwd_ptr);
 
-		//soft pointers
-		if(heap[i].tag == CWEAK_PTR){
+		//weak/soft pointers
+		if(heap[i].tag == CWEAK_PTR || heap[i].tag == CSOFT_PTR){
 			if(heap[heap[i].ptr].tag == CFWD_PTR)
 				heap[i].ptr = evacuate(heap[i].fwd_ptr);
 			else
@@ -176,6 +186,10 @@ int add_int(int number)
 int add_ptr(int ptr)
 {
 	return add_node(CPTR, ptr);
+}
+
+int add_soft_ptr(int ptr){
+	return add_node(CSOFT_PTR, ptr);
 }
 
 int add_weak_ptr(int ptr){
@@ -247,7 +261,7 @@ void add_root(int index)
 
 int main(void)
 {
-	test_case8();
+	test_case9();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -317,6 +331,9 @@ void print_heap(int i, int hn)
 			case CWEAK_PTR:
 				printf("Weak pointer: %d\n", heap[i].ptr);
 				break;
+			case CSOFT_PTR:
+				printf("Soft pointer: %d\n", heap[i].ptr);
+				break;	
 			default:
 				printf("\n");
 		}
@@ -334,8 +351,12 @@ void print_roots()
 void print_other_ptrs()
 {
 	int i;
-	for(i=0; i<soft_ptr_i; i++)
-		printf("Weak ptr -> %d\n", other_ptrs[i]);
+	for(i=0; i<soft_ptr_i; i++){
+		if(heap[other_ptrs[i]].tag == CWEAK_PTR)
+			printf("Weak ptr -> %d\n", other_ptrs[i]);
+		if(heap[other_ptrs[i]].tag == CSOFT_PTR)
+			printf("Soft ptr -> %d\n", other_ptrs[i]);
+	}
 }
 
 //------------------------------------------------------------------------------------------
@@ -400,4 +421,12 @@ void test_case8() //weak pointers
 	add_root(add_weak_ptr(ptr1));
 	add_root(ptr1);
 	add_root(add_weak_ptr(ptr3));
+}
+
+void test_case9() //soft pointers
+{
+	int i;
+	for(i=0; i<7; i++){
+		add_root(add_soft_ptr(add_int(10 +i)));
+	}
 }
