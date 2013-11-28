@@ -53,7 +53,7 @@ Node* add_data(intptr_t c, int n, Node **nodes);
 Node* add_lambda(intptr_t id, intptr_t n, Node **nodes);
 
 void add_root(Node *ptr);
-void finilize_ptr(int ptr);
+void finilize_ptr(Node *node);
 
 void print_heap();
 void print_roots();
@@ -175,11 +175,11 @@ void scaveneging(int i)
 				other_ptrs[soft_ptr_i++]=&(heap[i]);
 		}
 
-		// //finilized phantom pointers
-		// if(heap[i].tag == CPHANTOM_PTR_F){
-		// 	heap[i].ptr = -1;
-		// 	finilized_ptrs[finilized_ptr_i++]=i;
-		// }
+		//finilized phantom pointers
+		if(heap[i].tag == CPHANTOM_PTR_F){
+			heap[i].value = CNULL;
+			finilized_ptrs[finilized_ptr_i++]=&(heap[i]);
+		}
 		i++;
 	}
 };
@@ -222,9 +222,9 @@ Node* add_weak_ptr(Node *node)
 	return add_node(CWEAK_PTR, node);
 }
 
-// int add_phantom_ptr(int ptr){
-// 	return add_node(CPHANTOM_PTR_NF, ptr);
-// }
+Node* add_phantom_ptr(Node *node){
+	return add_node(CPHANTOM_PTR_NF, node);
+}
 
 Node* add_str(char *str)
 {
@@ -275,9 +275,9 @@ void add_root(Node* ptr)
 	roots_i++;
 }
 
-void finilize_ptr(int ptr)
+void finilize_ptr(Node* node)
 {
-	heap[ptr].tag = CPHANTOM_PTR_F;
+	node->tag = CPHANTOM_PTR_F;
 }
 
 
@@ -288,7 +288,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case9();
+	test_case10();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -479,13 +479,13 @@ void test_case9() //soft pointers
 	}
 }
 
-// void test_case10() //phantom pointers
-// {
-// 	int ptr1 = add_int(10);
-// 	int ptr2 = add_int(11);
-// 	int phantom_ptr = add_phantom_ptr(ptr1);
-// 	finilize_ptr(phantom_ptr);
-// 	add_root(phantom_ptr);
-// 	add_root(add_phantom_ptr(ptr2));
+void test_case10() //phantom pointers
+{
+	Node *node1 = add_int(10);
+	Node *node2 = add_int(11);
+	Node *phantom_node = add_phantom_ptr(node1);
+	finilize_ptr(phantom_node);
+	add_root(phantom_node);
+	add_root(add_phantom_ptr(node2));
 	
-// }
+}
