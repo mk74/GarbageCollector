@@ -118,11 +118,9 @@ void traverse_roots()
 
 void scaveneging()
 {
-	int i=HEAP_SIZE;
 	while(i<to_hp){
 		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND)
-			if(heap[i].fwd_ptr<HEAP_SIZE)
-				heap[i].ptr = evacuate(heap[i].fwd_ptr);
+			heap[i].ptr = evacuate(heap[i].fwd_ptr);
 		i++;
 	}
 };
