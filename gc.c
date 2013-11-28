@@ -49,7 +49,7 @@ Node* add_int(intptr_t number);
 Node* add_ptr(Node *ptr);
 Node* add_str(char[]);
 Node* add_range(Node* node1, Node* node2);
-int add_data(int c, int n, int *ptrs);
+Node* add_data(intptr_t c, int n, Node **nodes);
 int add_lambda(int id, int n, int *ptrs);
 
 void add_root(Node *ptr);
@@ -91,7 +91,6 @@ Node* evacuate(Node *node){
 		return node->value;
 	else {
 		//evacuate
-		// int old_to_hp = to_hp;
 		heap[to_hp].tag = node->tag;
 		heap[to_hp].value = node->value;
 		node->tag = CFWD_PTR;
@@ -108,10 +107,15 @@ Node* evacuate(Node *node){
 			heap[to_hp++].value = next_node->value;
 		}
 
-		// //data
-		// if(heap[old_to_hp].tag == CDATA_HEAD)
-		// 	while(heap[++i].tag == CDATA_ND)
-		// 		heap[to_hp++] = heap[i];
+		//data
+		if(head_node->tag == CDATA_HEAD){
+			Node *next_node = (node +1);
+			while(next_node->tag == CDATA_ND){
+				heap[to_hp].tag = next_node->tag;
+				heap[to_hp++].value = next_node->value;
+				next_node = (next_node + 1);
+			}
+		}
 
 		// //lambda
 		// if(heap[old_to_hp].tag == CLAMBDA_ID){
@@ -219,19 +223,19 @@ Node* add_str(char *str)
 
 Node* add_range(Node* node1, Node* node2)
 {
-	Node *result_node = add_node(CRANGE, node1);
+	Node *head_node = add_node(CRANGE, node1);
 	add_node(CRANGE, node2);
-	return result_node;
+	return head_node;
 }
 
-// int add_data(int c, int n, int *ptrs)
-// {
-// 	int i, old_from_hp = from_hp;
-// 	add_node(CDATA_HEAD, c);
-// 	for(i=0; i<n; i++)
-// 		add_node(CDATA_ND, ptrs[i]);
-// 	return old_from_hp;
-// }
+Node* add_data(intptr_t c, int n, Node **nodes)
+{
+	int i;
+	Node *head_node = add_node(CDATA_HEAD, (void*) c);
+	for(i=0; i<n; i++)
+		add_node(CDATA_ND, nodes[i]);
+	return head_node;
+}
 
 // int add_lambda(int id, int n, int *ptrs)
 // {
@@ -274,7 +278,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case4();
+	test_case5();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -324,12 +328,13 @@ void print_heap(int i, int hn)
 				printf("Range: %p %p\n", heap[i].value, heap[i+1].value);
 				i++;
 				break;
-			// case CDATA_HEAD:
-			// 	printf("Data constructor: %d, ", heap[i].constructor);
-			// 	while(heap[++i].tag == CDATA_ND)
-			// 		printf("node: %d, ", heap[i].ptr);
-			// 	printf("\n");
-			// 	break;
+			case CDATA_HEAD:
+				printf("Data constructor: %ld, ", (intptr_t)heap[i].value);
+				while(heap[++i].tag == CDATA_ND)
+					printf("node: %p, ", heap[i].value);
+				i--;
+				printf("\n");
+				break;
 			case CCONST_BOOL:
 				if((bool)(heap[i].value))
 					printf("Boolean: true\n");
@@ -419,13 +424,14 @@ void test_case4() //range data
 	add_root(add_range(add_int(10), add_int(20)));
 }
 
-// void test_case5() //data
-// {
-// 	int ptrs[5], i;
-// 	for(i=0; i<5; i++)
-// 		ptrs[i] = add_int(10 +i);
-// 	add_root(add_data(7, 5, ptrs));
-// }
+void test_case5() //data
+{
+	int i;
+	Node* nodes[5];
+	for(i=0; i<5; i++)
+		nodes[i] = add_int(10 +i);
+	add_root(add_data(7, 5, nodes));
+}
 
 void test_case6() //bool
 {
