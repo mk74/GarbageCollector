@@ -48,7 +48,7 @@ Node* add_bool(bool value);
 Node* add_int(intptr_t number);
 Node* add_ptr(Node *ptr);
 Node* add_str(char[]);
-int add_range(int ptr1, int ptr2);
+Node* add_range(Node* node1, Node* node2);
 int add_data(int c, int n, int *ptrs);
 int add_lambda(int id, int n, int *ptrs);
 
@@ -95,15 +95,18 @@ Node* evacuate(Node *node){
 		heap[to_hp].tag = node->tag;
 		heap[to_hp].value = node->value;
 		node->tag = CFWD_PTR;
-		node->value = &(heap[to_hp]);
+		node->value = &(heap[to_hp++]);
 
-		return &(heap[to_hp++]);
+		Node *head_node = node->value;
 
-		// //data, which occupies more than one node
+		//data, which occupies more than one node
 
-		// //ranges
-		// if(heap[old_to_hp].tag == CRANGE)
-		// 	heap[to_hp++] = heap[++i];
+		//ranges
+		if(head_node->tag == CRANGE){
+			Node *next_node = (node + 1);
+			heap[to_hp].tag = next_node->tag;
+			heap[to_hp++].value = next_node->value;
+		}
 
 		// //data
 		// if(heap[old_to_hp].tag == CDATA_HEAD)
@@ -118,7 +121,7 @@ Node* evacuate(Node *node){
 		// 		heap[to_hp++] = heap[i];
 		// }
 
-		// return old_to_hp;
+		return head_node;
 	}
 };
 
@@ -214,13 +217,12 @@ Node* add_str(char *str)
 	return add_node(CCONST_STR, (void *)strdup(str));	
 }
 
-// int add_range(int ptr1, int ptr2)
-// {
-// 	int old_from_hp = from_hp;
-// 	add_node(CRANGE, ptr1);
-// 	add_node(CRANGE, ptr2);
-// 	return old_from_hp;
-// }
+Node* add_range(Node* node1, Node* node2)
+{
+	Node *result_node = add_node(CRANGE, node1);
+	add_node(CRANGE, node2);
+	return result_node;
+}
 
 // int add_data(int c, int n, int *ptrs)
 // {
@@ -272,7 +274,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case6();
+	test_case4();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -318,10 +320,10 @@ void print_heap(int i, int hn)
 			case CCONST_STR:
 				printf("String: %s\n", (char *)heap[i].value);
 				break;
-			// case CRANGE:
-			// 	printf("Range: %d %d\n", heap[i].ptr, heap[i+1].ptr);
-			// 	i++;
-			// 	break;
+			case CRANGE:
+				printf("Range: %p %p\n", heap[i].value, heap[i+1].value);
+				i++;
+				break;
 			// case CDATA_HEAD:
 			// 	printf("Data constructor: %d, ", heap[i].constructor);
 			// 	while(heap[++i].tag == CDATA_ND)
@@ -412,12 +414,10 @@ void test_case3() //string data
 	add_str("kasia");
 }
 
-// void test_case4() //range data
-// {
-// 	int ptr1 = add_int(10);
-// 	int ptr2 = add_int(20);
-// 	add_root(add_range(ptr1, ptr2));
-// }
+void test_case4() //range data
+{
+	add_root(add_range(add_int(10), add_int(20)));
+}
 
 // void test_case5() //data
 // {
