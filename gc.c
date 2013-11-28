@@ -33,7 +33,7 @@ Node heap[2*HEAP_SIZE] = {0};
 int from_hp = 0, to_hp = HEAP_SIZE;
 
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N];
-int roots_i=0, soft_ptr_i=0, finilized_ptr_i=0;
+int roots_i=0, other_ptr_i=0, finilized_ptr_i=0;
 
 void gc();
 Node* evacuate(Node *node);
@@ -145,7 +145,7 @@ void traverse_roots()
 int traverse_other_ptrs()
 {
 	int i, old_to_hp= to_hp;
-	for(i=0; i<soft_ptr_i; i++){
+	for(i=0; i<other_ptr_i; i++){
 		Node *node = (Node*)(other_ptrs[i]->value);
 		if(node->tag == CFWD_PTR) //something else was referring to that node
 			other_ptrs[i]->value = node->value;
@@ -172,13 +172,13 @@ void scaveneging(int i)
 			if(((Node*)heap[i].value)->tag == CFWD_PTR)
 				heap[i].value = evacuate(heap[i].value);
 			else
-				other_ptrs[soft_ptr_i++]=&(heap[i]);
+				other_ptrs[other_ptr_i++] = &(heap[i]);
 		}
 
 		//finilized phantom pointers
 		if(heap[i].tag == CPHANTOM_PTR_F){
 			heap[i].value = CNULL;
-			finilized_ptrs[finilized_ptr_i++]=&(heap[i]);
+			finilized_ptrs[finilized_ptr_i++] = &(heap[i]);
 		}
 		i++;
 	}
@@ -390,7 +390,7 @@ void print_roots()
 void print_other_ptrs()
 {
 	int i;
-	for(i=0; i<soft_ptr_i; i++){
+	for(i=0; i<other_ptr_i; i++){
 		if(other_ptrs[i]->tag == CWEAK_PTR)
 			printf("Weak ptr -> %p\n", other_ptrs[i]);
 		if(other_ptrs[i]->tag == CSOFT_PTR)
