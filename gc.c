@@ -84,7 +84,7 @@ void gc()
 	if(old_to_hp != to_hp)
 		scaveneging(old_to_hp);
 
-	// look_back();
+	look_back();
 };
 
 Node* evacuate(Node *node){
@@ -184,16 +184,16 @@ void scaveneging(int i)
 	}
 };
 
-// void look_back(){
-// 	int i = 0;
-// 	while(i<from_hp){
-// 		if(heap[i].tag == CCONST_STR){
-// 			free(heap[i].str);
-// 			heap[i].str = NULL;
-// 		}
-// 		i++;
-// 	}
-// };
+void look_back(){
+	int i = 0;
+	while(i<from_hp){
+		if(heap[i].tag == CCONST_STR){
+			free(heap[i].value);
+			heap[i].value = CNULL;
+		}
+		i++;
+	}
+};
 
 
 //------------------------------------------------------------------------------------------
@@ -285,7 +285,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case8();
+	test_case3();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
