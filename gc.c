@@ -20,6 +20,8 @@
 #define CLAMBDA_ARG 11
 #define CWEAK_PTR 12
 #define CSOFT_PTR 13
+#define CPHANTOM_PTR_NF 14
+#define CPHANTOM_PTR_F 15
 
 typedef struct node{
 	unsigned char tag;
@@ -36,8 +38,8 @@ typedef struct node{
 Node heap[2*HEAP_SIZE] = {0};
 int from_hp = 0, to_hp = HEAP_SIZE;
 
-int roots[ROOTS_N], other_ptrs[ROOTS_N];
-int roots_i=0, soft_ptr_i=0;
+int roots[ROOTS_N], other_ptrs[ROOTS_N], finilized_ptrs[ROOTS_N];
+int roots_i=0, soft_ptr_i=0, finilized_ptr_i=0;
 
 void gc();
 int evacuate(int i);
@@ -56,10 +58,12 @@ int add_data(int c, int n, int *ptrs);
 int add_lambda(int id, int n, int *ptrs);
 
 void add_root(int index);
+void finilize_ptr(int ptr);
 
 void print_heap();
 void print_roots();
 void print_other_ptrs();
+void print_finilized_ptrs();
 
 void test_case1();
 void test_case2();
@@ -70,6 +74,7 @@ void test_case6();
 void test_case7();
 void test_case8();
 void test_case9();
+void test_case10();
 
 //------------------------------------------------------------------------------------------
 // Garbage collector
@@ -147,7 +152,7 @@ int traverse_other_ptrs()
 void scaveneging(int i)
 {
 	while(i<to_hp){
-		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND)
+		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND || heap[i].tag == CPHANTOM_PTR_NF)
 			heap[i].ptr = evacuate(heap[i].fwd_ptr);
 
 		//weak/soft pointers
@@ -156,6 +161,12 @@ void scaveneging(int i)
 				heap[i].ptr = evacuate(heap[i].fwd_ptr);
 			else
 				other_ptrs[soft_ptr_i++]=i;
+		}
+
+		//finilized phantom pointers
+		if(heap[i].tag == CPHANTOM_PTR_F){
+			heap[i].ptr= NULL;
+			finilized_ptrs[finilized_ptr_i++]=i;
 		}
 		i++;
 	}
@@ -194,6 +205,10 @@ int add_soft_ptr(int ptr){
 
 int add_weak_ptr(int ptr){
 	return add_node(CWEAK_PTR, ptr);
+}
+
+int add_phantom_ptr(int ptr){
+	return add_node(CPHANTOM_PTR_NF, ptr);
 }
 
 int add_str(char *str)
@@ -253,6 +268,11 @@ void add_root(int index)
 	roots_i++;
 }
 
+void finilize_ptr(int ptr)
+{
+	heap[ptr].tag = CPHANTOM_PTR_F;
+}
+
 
 //------------------------------------------------------------------------------------------
 // Main function
@@ -261,7 +281,7 @@ void add_root(int index)
 
 int main(void)
 {
-	test_case9();
+	test_case10();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -279,6 +299,8 @@ int main(void)
 	print_roots();
 	printf("soft pointers:\n");
 	print_other_ptrs();
+	printf("\nfinialized pointers:\n");
+	print_finilized_ptrs();
 	return 1;
 }
 
@@ -334,6 +356,12 @@ void print_heap(int i, int hn)
 			case CSOFT_PTR:
 				printf("Soft pointer: %d\n", heap[i].ptr);
 				break;	
+			case CPHANTOM_PTR_NF:
+				printf("Phantom ptr(not-finlized): %d\n", heap[i].ptr);
+				break;	
+			case CPHANTOM_PTR_F:
+				printf("Phantom ptr(finilized): %d\n", heap[i].ptr);
+				break;	
 			default:
 				printf("\n");
 		}
@@ -357,6 +385,13 @@ void print_other_ptrs()
 		if(heap[other_ptrs[i]].tag == CSOFT_PTR)
 			printf("Soft ptr -> %d\n", other_ptrs[i]);
 	}
+}
+
+void print_finilized_ptrs()
+{
+	int i;
+	for(i=0; i<finilized_ptr_i; i++)
+		printf("Finilized ptr -> %d\n", finilized_ptrs[i]);
 }
 
 //------------------------------------------------------------------------------------------
@@ -429,4 +464,15 @@ void test_case9() //soft pointers
 	for(i=0; i<7; i++){
 		add_root(add_soft_ptr(add_int(10 +i)));
 	}
+}
+
+void test_case10() //phantom pointers
+{
+	int ptr1 = add_int(10);
+	int ptr2 = add_int(11);
+	int phantom_ptr = add_phantom_ptr(ptr1);
+	finilize_ptr(phantom_ptr);
+	add_root(phantom_ptr);
+	add_root(add_phantom_ptr(ptr2));
+	
 }
