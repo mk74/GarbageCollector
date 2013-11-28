@@ -192,10 +192,10 @@ Node* add_int(intptr_t number)
 	return add_node(CCONST_INT, (void *)number);
 }
 
-// Node* add_ptr(Node *ptr)
-// {
-// 	return add_node(CPTR, ptr);
-// }
+Node* add_ptr(Node *ptr)
+{
+	return add_node(CPTR, ptr);
+}
 
 // int add_soft_ptr(int ptr){
 // 	return add_node(CSOFT_PTR, ptr);
@@ -279,7 +279,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case1();
+	test_case2();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -319,9 +319,9 @@ void print_heap(int i, int hn)
 			case CCONST_INT:
 				printf("INTEGER: %ld\n", (intptr_t)heap[i].value);
 				break;
-			// case CPTR:
-			// 	printf("POINTER: %d\n", heap[i].ptr);
-			// 	break;
+			case CPTR:
+				printf("POINTER: %p\n", heap[i].value);
+				break;
 			// case CCONST_STR:
 			// 	printf("String: %s\n", heap[i].str);
 			// 	break;
@@ -404,13 +404,13 @@ void test_case1() //traversing roots
 	add_int(20);
 };
 
-// void test_case2() //scavenging
-// {
-// 	Node *ptr = add_int(10);
-// 	add_root(add_ptr(ptr));
-// 	add_root(add_int(20));
-// 	add_root(add_ptr(ptr));
-// };
+void test_case2() //scavenging
+{
+	Node *ptr = add_int(10);
+	add_root(add_ptr(ptr));
+	add_root(add_int(20));
+	add_root(add_ptr(ptr));
+};
 
 // void test_case3() //string data
 // {
