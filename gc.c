@@ -44,7 +44,7 @@ void scaveneging();
 void look_back();
 
 Node* add_node(char type, void* value);
-int add_bool(bool value);
+Node* add_bool(bool value);
 Node* add_int(intptr_t number);
 Node* add_ptr(Node *ptr);
 Node* add_str(char[]);
@@ -241,12 +241,10 @@ Node* add_str(char *str)
 // 	return old_from_hp;
 // }
 
-// int add_bool(bool value)
-// {
-// 	Node node = {CCONST_BOOL, value};
-// 	heap[from_hp] = node;
-// 	return from_hp++;
-// }
+Node* add_bool(bool value)
+{
+	return add_node(CCONST_BOOL, (void *)value);	
+}
 
 Node* add_node(char type, void *value)
 {
@@ -274,7 +272,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case3();
+	test_case6();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -330,11 +328,12 @@ void print_heap(int i, int hn)
 			// 		printf("node: %d, ", heap[i].ptr);
 			// 	printf("\n");
 			// 	break;
-			// case CCONST_BOOL:
-			// 	if(heap[i].bool_value)
-			// 		printf("Boolean: true\n");
-			// 	else
-			// 		printf("Boolean: false\n");
+			case CCONST_BOOL:
+				if((bool)(heap[i].value))
+					printf("Boolean: true\n");
+				else
+					printf("Boolean: false\n");
+				break;
 			// case CLAMBDA_ID:
 			// 	printf("Lambda function id: %d, ", heap[i].number);
 			// 	printf("n: %d, ", heap[++i].number);
@@ -428,10 +427,11 @@ void test_case3() //string data
 // 	add_root(add_data(7, 5, ptrs));
 // }
 
-// void test_case6() //bool
-// {
-// 	add_root(add_bool(true));
-// }
+void test_case6() //bool
+{
+	add_bool(false);
+	add_root(add_bool(true));
+}
 
 // void test_case7() //lambda expression
 // {
