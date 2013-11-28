@@ -47,7 +47,7 @@ Node* add_node(char type, void* value);
 int add_bool(bool value);
 Node* add_int(intptr_t number);
 Node* add_ptr(Node *ptr);
-int add_str(char[]);
+Node* add_str(char[]);
 int add_range(int ptr1, int ptr2);
 int add_data(int c, int n, int *ptrs);
 int add_lambda(int id, int n, int *ptrs);
@@ -209,15 +209,16 @@ Node* add_ptr(Node *ptr)
 // 	return add_node(CPHANTOM_PTR_NF, ptr);
 // }
 
-// int add_str(char *str)
-// {
-// 	int i;
-// 	Node node;
-// 	node.tag = CCONST_STR;
-// 	node.str = strdup(str);
-// 	heap[from_hp] = node;
-// 	return from_hp++;
-// }
+Node* add_str(char *str)
+{
+	return add_node(CCONST_STR, (void *)strdup(str));	
+	// int i;
+	// Node node;
+	// node.tag = CCONST_STR;
+	// node.value = strdup(str);
+	// heap[from_hp] = node;
+	// return from_hp++;
+}
 
 // int add_range(int ptr1, int ptr2)
 // {
@@ -279,7 +280,7 @@ void finilize_ptr(int ptr)
 
 int main(void)
 {
-	test_case2();
+	test_case3();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -322,9 +323,9 @@ void print_heap(int i, int hn)
 			case CPTR:
 				printf("POINTER: %p\n", heap[i].value);
 				break;
-			// case CCONST_STR:
-			// 	printf("String: %s\n", heap[i].str);
-			// 	break;
+			case CCONST_STR:
+				printf("String: %s\n", (char *)heap[i].value);
+				break;
 			// case CRANGE:
 			// 	printf("Range: %d %d\n", heap[i].ptr, heap[i+1].ptr);
 			// 	i++;
@@ -412,11 +413,11 @@ void test_case2() //scavenging
 	add_root(add_ptr(ptr));
 };
 
-// void test_case3() //string data
-// {
-// 	add_root(add_str("maciek"));
-// 	add_str("kasia");
-// }
+void test_case3() //string data
+{
+	add_root(add_str("maciek"));
+	add_str("kasia");
+}
 
 // void test_case4() //range data
 // {
