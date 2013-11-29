@@ -44,7 +44,9 @@ void gc();
 Node* evacuate(Node *node);
 void traverse_roots();
 int traverse_other_ptrs();
-void scaveneging();
+void scavenege_new(int i);
+void scavenege_big_data(Node *head_node);
+void scaveneging(Node *node, Node *end_node);
 void traverse_free();
 
 Node* add_node(char type, void* value);
@@ -89,11 +91,22 @@ void test_case11();
 
 void gc()
 {
+	int old_to_hp;
 	traverse_roots();
-	scaveneging(HEAP_SIZE);
-	int old_to_hp = traverse_other_ptrs();
+	scavenege_new(HEAP_SIZE);
+	old_to_hp = to_hp;
+
+	// scavenge big data
+	int i;
+	for(i=0; i<big_data_i; i++){
+		scavenege_big_data(big_data[i]->value);
+	}
+	scavenege_new(old_to_hp);
+
+	old_to_hp = traverse_other_ptrs();
 	if(old_to_hp != to_hp)
-		scaveneging(old_to_hp);
+		scavenege_new(old_to_hp);
+
 	traverse_free();
 };
 
@@ -160,37 +173,53 @@ int traverse_other_ptrs()
 			if(other_ptrs[i]->tag == CSOFT_PTR && left_mem > LOW_MEM_THRESHOLD){
 				other_ptrs[i]->value = evacuate(node);
 			}else
-				other_ptrs[i]-> value = CNULL;
+				other_ptrs[i]->value = CNULL;
 		}
 	}
 	return old_to_hp;
 };
 
-void scaveneging(int i)
+void scavenege_new(int to_start)
 {
-	while(i<to_hp){
-		if(heap[i].tag == CPTR || heap[i].tag == CRANGE || heap[i].tag == CDATA_ND 
-		   || heap[i].tag == CPHANTOM_PTR_NF || heap[i].tag == CLAMBDA_ARG)
-			heap[i].value = evacuate(heap[i].value);
+	int to_end = to_hp;
+	while(to_start!=to_end){ //kept scavenging as long as new things are added to to_space
+		scaveneging(&heap[to_start], &heap[to_end]);
+		to_start = to_end;
+		to_end = to_hp;
+	}
+}
+
+void scavenege_big_data(Node *head_node){
+	Node *end_node = head_node + (intptr_t)(head_node->value) + 2;
+	head_node+=2;
+	scaveneging(head_node, end_node);
+}
+
+void scaveneging(Node *node, Node *end_node)
+{
+	while(node<end_node){
+		if(node->tag == CPTR || node->tag == CRANGE || node->tag == CDATA_ND 
+		   || node->tag == CPHANTOM_PTR_NF || node->tag == CLAMBDA_ARG || node->tag == CBDATA_ND)
+			node->value = evacuate(node->value);
 
 		//weak/soft pointers
-		if(heap[i].tag == CWEAK_PTR || heap[i].tag == CSOFT_PTR){
-			if(((Node*)heap[i].value)->tag == CFWD_PTR)
-				heap[i].value = evacuate(heap[i].value);
+		if(node->tag == CWEAK_PTR || node->tag == CSOFT_PTR){
+			if(((Node*)node->value)->tag == CFWD_PTR)
+				node->value = evacuate(node->value);
 			else
-				other_ptrs[other_ptr_i++] = &(heap[i]);
+				other_ptrs[other_ptr_i++] = node;
 		}
 
 		//finilized phantom pointers
-		if(heap[i].tag == CPHANTOM_PTR_F){
-			heap[i].value = CNULL;
-			finilized_ptrs[finilized_ptr_i++] = &(heap[i]);
+		if(node->tag == CPHANTOM_PTR_F){
+			node->value = CNULL;
+			finilized_ptrs[finilized_ptr_i++] = node;
 		}
 
 		//big data
-		if(heap[i].tag == CBDATA_PTR)
-			big_data[big_data_i++] = &(heap[i]);
-		i++;
+		if(node->tag == CBDATA_PTR)
+			big_data[big_data_i++] = node;
+		node++;
 	}
 };
 
@@ -314,7 +343,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case7();
+	test_case11();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
