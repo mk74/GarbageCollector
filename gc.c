@@ -53,6 +53,7 @@ Node* add_str(char[]);
 Node* add_range(Node* node1, Node* node2);
 Node* add_data(intptr_t c, int n, Node **nodes);
 Node* add_lambda(intptr_t id, intptr_t n, Node **nodes);
+void copy_node(Node *dst, Node*src);
 
 void add_root(Node *ptr);
 void finilize_ptr(Node *node);
@@ -93,8 +94,7 @@ Node* evacuate(Node *node)
 		return node->value;
 	else {
 		//evacuate
-		heap[to_hp].tag = node->tag;
-		heap[to_hp].value = node->value;
+		copy_node(&(heap[to_hp]), node);
 		node->tag = CFWD_PTR;
 		node->value = &(heap[to_hp++]);
 
@@ -105,16 +105,14 @@ Node* evacuate(Node *node)
 		//ranges
 		if(head_node->tag == CRANGE){
 			Node *next_node = (node + 1);
-			heap[to_hp].tag = next_node->tag;
-			heap[to_hp++].value = next_node->value;
+			copy_node(&heap[to_hp++], next_node);
 		}
 
 		//data
 		if(head_node->tag == CDATA_HEAD){
 			Node *next_node = (node + 1);
 			while(next_node->tag == CDATA_ND){
-				heap[to_hp].tag = next_node->tag;
-				heap[to_hp++].value = next_node->value;
+				copy_node(&heap[to_hp++], next_node);
 				next_node = (next_node + 1);
 			}
 		}
@@ -123,12 +121,10 @@ Node* evacuate(Node *node)
 		if(head_node->tag == CLAMBDA_ID){
 			Node *next_node = (node + 1);
 			int end = (intptr_t)next_node->value, i;
-			heap[to_hp].tag = next_node->tag;
-			heap[to_hp++].value = next_node->value;
+			copy_node(&heap[to_hp++], next_node);
 			for(i=0; i<end; i++){
 				next_node = (next_node + 1);
-				heap[to_hp].tag = next_node->tag;
-				heap[to_hp++].value = next_node->value;
+				copy_node(&heap[to_hp++], next_node);
 			}
 		}
 
@@ -270,6 +266,11 @@ Node* add_node(char type, void *value)
 	return &(heap[from_hp++]);
 }
 
+void copy_node(Node *dst, Node *src){
+	dst->tag = src->tag;
+	dst->value = src->value;
+}
+
 void add_root(Node* ptr)
 {
 	roots[roots_i] = ptr;
@@ -289,7 +290,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case10();
+	test_case7();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
