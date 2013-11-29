@@ -64,10 +64,12 @@ void copy_node(Node *dst, Node*src);
 void add_root(Node *ptr);
 void finilize_ptr(Node *node);
 
-void print_heap();
+void print_heap(int i, int hn);
+void print_nodes(Node *node, Node *end_node);
 void print_roots();
 void print_other_ptrs();
 void print_finilized_ptrs();
+void print_big_data();
 
 void test_case1();
 void test_case2();
@@ -312,7 +314,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case11();
+	test_case7();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -342,70 +344,72 @@ int main(void)
 // Debugging functions
 //------------------------------------------------------------------------------------------
 
+void print_heap(int i, int hn){
+	print_nodes(&(heap[i]), &(heap[hn]));
+}
 
-void print_heap(int i, int hn)
+void print_nodes(Node *node, Node *end_node)
 {
-	while(i<hn){
-		printf("%d:%p:", i, &(heap[i]));
-		switch(heap[i].tag){
+	while(node < end_node){
+		printf("%p:", node);
+		switch(node->tag){
 			case CFWD_PTR:
-				printf("Forward ptr: %p\n", heap[i].value);
+				printf("Forward ptr: %p\n", node->value);
 				break;
 			case CCONST_INT:
-				printf("INTEGER: %ld\n", (intptr_t)heap[i].value);
+				printf("INTEGER: %ld\n", (intptr_t)node->value);
 				break;
 			case CPTR:
-				printf("POINTER: %p\n", heap[i].value);
+				printf("POINTER: %p\n", node->value);
 				break;
 			case CCONST_STR:
-				printf("String: %s\n", (char *)heap[i].value);
+				printf("String: %s\n", (char *)node->value);
 				break;
 			case CRANGE:
-				printf("Range: %p %p\n", heap[i].value, heap[i+1].value);
-				i++;
+				printf("Range: %p %p\n", node->value, (++node)->value);
 				break;
 			case CDATA_HEAD:
-				printf("Data constructor: %ld, ", (intptr_t)heap[i].value);
-				while(heap[++i].tag == CDATA_ND)
-					printf("node: %p, ", heap[i].value);
-				i--;
+				printf("Data constructor: %ld, ", (intptr_t)node->value);
+				while((++node)->tag == CDATA_ND)
+					printf("node: %p, ", node->value);
+				node--;
 				printf("\n");
 				break;
 			case CCONST_BOOL:
-				if((bool)(heap[i].value))
+				if((bool)(node->value))
 					printf("Boolean: true\n");
 				else
 					printf("Boolean: false\n");
 				break;
 			case CLAMBDA_ID:
-				printf("Lambda function id: %ld, ", (intptr_t)heap[i].value);
-				printf("n: %ld, ", (intptr_t)heap[++i].value);
-				int end = i + (intptr_t)heap[i].value;
-				i++;
-				for(; i<=end; i++)
-					printf("arg ptr: %p, ", heap[i].value);
-				i--;
+				printf("Lambda function id: %ld, ", (intptr_t)node->value);
+				printf("n: %ld, ", (intptr_t)(++node)->value);
+				Node *end_lambda = node + (intptr_t)node->value;
+				node++;
+				for(; node<=end_lambda; node++)
+					printf("arg ptr: %p, ", node->value);
+				node--;
 				printf("\n");
 				break;
 			case CWEAK_PTR:
-				printf("Weak pointer: %p\n", heap[i].value);
+				printf("Weak pointer: %p\n", node->value);
 				break;
 			case CSOFT_PTR:
-				printf("Soft pointer: %p\n", heap[i].value);
+				printf("Soft pointer: %p\n", node->value);
 				break;	
 			case CPHANTOM_PTR_NF:
-				printf("Phantom ptr(not-finlized): %p\n", heap[i].value);
+				printf("Phantom ptr(not-finlized): %p\n", node->value);
 				break;	
 			case CPHANTOM_PTR_F:
-				printf("Phantom ptr(finilized): %p\n", heap[i].value);
+				printf("Phantom ptr(finilized): %p\n", node->value);
 				break;	
 			case CBDATA_PTR:
-				printf("Big data ptr: %p\n", heap[i].value);
+				printf("Big data ptr: %p\n", node->value);
 				break;	
 			default:
 				printf("\n");
 		}
-		i++;
+		node++;
 	}
 }
 
