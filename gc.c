@@ -314,7 +314,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case7();
+	test_case11();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -403,9 +403,20 @@ void print_nodes(Node *node, Node *end_node)
 			case CPHANTOM_PTR_F:
 				printf("Phantom ptr(finilized): %p\n", node->value);
 				break;	
+
 			case CBDATA_PTR:
 				printf("Big data ptr: %p\n", node->value);
 				break;	
+			case CBDATA_HEAD_N:
+				printf("Big data n: %ld\n", (intptr_t)node->value);
+				break;	
+			case CBDATA_HEAD_C:
+				printf("Big data c: %ld\n", (intptr_t)node->value);
+				break;	
+			case CBDATA_ND:
+				printf("Big data node ptr: %p\n", node->value);
+				break;	
+
 			default:
 				printf("\n");
 		}
@@ -443,6 +454,9 @@ void print_big_data()
 	int i;
 	for(i=0; i<big_data_i; i++){
 		printf("Big data -> %p\n", big_data[i]);
+		Node *head_node = big_data[i]->value;
+		Node *end_node = head_node + (intptr_t)(head_node->value) + 2;
+		print_nodes(head_node, end_node);
 	}
 }
 
@@ -535,5 +549,5 @@ void test_case11() // big data
 	Node* nodes[5];
 	for(i=0; i<5; i++)
 		nodes[i] = add_int(10 +i);
-	add_root(add_big_data(7, 5, nodes));
+	add_root(add_big_data(5, 7, nodes));
 }
