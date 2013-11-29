@@ -314,7 +314,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case11();
+	test_case7();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -368,29 +368,31 @@ void print_nodes(Node *node, Node *end_node)
 			case CRANGE:
 				printf("Range: %p %p\n", node->value, (++node)->value);
 				break;
+
 			case CDATA_HEAD:
-				printf("Data constructor: %ld, ", (intptr_t)node->value);
-				while((++node)->tag == CDATA_ND)
-					printf("node: %p, ", node->value);
-				node--;
-				printf("\n");
+				printf("Data constructor: %ld\n", (intptr_t)node->value);
 				break;
+			case CDATA_ND:
+				printf("Data node ptr: %p\n", node->value);
+				break;
+
 			case CCONST_BOOL:
 				if((bool)(node->value))
 					printf("Boolean: true\n");
 				else
 					printf("Boolean: false\n");
 				break;
+
 			case CLAMBDA_ID:
-				printf("Lambda function id: %ld, ", (intptr_t)node->value);
-				printf("n: %ld, ", (intptr_t)(++node)->value);
-				Node *end_lambda = node + (intptr_t)node->value;
-				node++;
-				for(; node<=end_lambda; node++)
-					printf("arg ptr: %p, ", node->value);
-				node--;
-				printf("\n");
+				printf("Lambda function id: %ld\n", (intptr_t)node->value);
 				break;
+			case CLAMBDA_N:
+				printf("Lambda function n: %ld\n", (intptr_t)node->value);
+				break;
+			case CLAMBDA_ARG:
+				printf("Lambda arg ptr: %p\n", node->value);
+				break;
+
 			case CWEAK_PTR:
 				printf("Weak pointer: %p\n", node->value);
 				break;
