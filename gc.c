@@ -106,7 +106,7 @@ void gc()
 	if(old_to_hp != to_hp)
 		scavenege_new(old_to_hp);
 
-	traverse_free();
+	traverse_free(&heap[0], &heap[from_hp]);
 };
 
 Node* evacuate(Node *node)
@@ -221,13 +221,23 @@ void scaveneging(Node *node, Node *end_node)
 	}
 };
 
-void traverse_free()
+void traverse_free(Node *node, Node *end_node)
 {
-	for(int i=0; i<from_hp; i++){
-		if(heap[i].tag == CCONST_STR || heap[i].tag == CBDATA_PTR){
-			free(heap[i].value);
-			heap[i].value = CNULL;
+	while(node<end_node){
+
+		if(node->tag ==CBDATA_PTR){ //recursive traverse_free bigdata objects
+			Node *head_node = node->value;
+			Node *end_node = head_node + (intptr_t)head_node->value + 2;
+			head_node+=2;
+			traverse_free(head_node, end_node);
 		}
+
+		if(node->tag == CCONST_STR || node->tag == CBDATA_PTR){
+			free(node->value);
+			node->value = CNULL;
+		}
+
+		node++;
 	}
 };
 
