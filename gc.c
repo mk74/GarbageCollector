@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define HEAP_SIZE  30
 #define LOW_MEM_THRESHOLD 20
@@ -23,6 +24,10 @@
 #define CSOFT_PTR 13
 #define CPHANTOM_PTR_NF 14
 #define CPHANTOM_PTR_F 15
+#define CBDATA_PTR 16
+#define CBDATA_HEAD_N 17
+#define CBDATA_HEAD_C 18
+#define CBDATA_ND 19
 
 typedef struct node{
 	unsigned char tag;
@@ -52,6 +57,7 @@ Node* add_phantom_ptr(Node *node);
 Node* add_str(char[]);
 Node* add_range(Node* node1, Node* node2);
 Node* add_data(intptr_t c, int n, Node **nodes);
+Node* add_big_data(intptr_t n, intptr_t c, Node **nodes);
 Node* add_lambda(intptr_t id, intptr_t n, Node **nodes);
 void copy_node(Node *dst, Node*src);
 
@@ -73,6 +79,7 @@ void test_case7();
 void test_case8();
 void test_case9();
 void test_case10();
+void test_case11();
 
 //------------------------------------------------------------------------------------------
 // Garbage collector
@@ -244,6 +251,17 @@ Node* add_data(intptr_t c, int n, Node **nodes)
 	return head_node;
 }
 
+Node* add_big_data(intptr_t n, intptr_t c, Node **nodes)
+{
+	int i;
+	Node *big_data = malloc(sizeof(Node) * (n+2) );
+	big_data[0]= (Node){CBDATA_HEAD_N, (void *)n};
+	big_data[1]= (Node){CBDATA_HEAD_C, (void *)c};
+	for(i=0; i<n; i++)
+		big_data[i+2] = (Node){CBDATA_ND, nodes[i]};
+	return add_node(CBDATA_PTR, (void *) big_data);
+}
+
 Node* add_lambda(intptr_t id, intptr_t n, Node **nodes)
 {
 	int i;
@@ -290,7 +308,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case7();
+	test_case11();
 	printf("Before:\nfrom_space:\n");
 	print_heap(0, from_hp);
 	printf("roots:\n");
@@ -374,6 +392,9 @@ void print_heap(int i, int hn)
 				break;	
 			case CPHANTOM_PTR_F:
 				printf("Phantom ptr(finilized): %p\n", heap[i].value);
+				break;	
+			case CBDATA_PTR:
+				printf("Big data ptr: %p\n", heap[i].value);
 				break;	
 			default:
 				printf("\n");
@@ -489,5 +510,13 @@ void test_case10() //phantom pointers
 	finilize_ptr(phantom_node);
 	add_root(phantom_node);
 	add_root(add_phantom_ptr(node2));
-	
+}
+
+void test_case11() // big data
+{
+	int i;
+	Node* nodes[5];
+	for(i=0; i<5; i++)
+		nodes[i] = add_int(10 +i);
+	add_root(add_big_data(7, 5, nodes));
 }
