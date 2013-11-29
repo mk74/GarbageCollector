@@ -37,8 +37,8 @@ typedef struct node{
 Node heap[2*HEAP_SIZE] = {0};
 int from_hp = 0, to_hp = HEAP_SIZE;
 
-Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N];
-int roots_i=0, other_ptr_i=0, finilized_ptr_i=0;
+Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N], *big_data[ROOTS_N];
+int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
 
 void gc();
 Node* evacuate(Node *node);
@@ -184,6 +184,10 @@ void scaveneging(int i)
 			heap[i].value = CNULL;
 			finilized_ptrs[finilized_ptr_i++] = &(heap[i]);
 		}
+
+		//big data
+		if(heap[i].tag == CBDATA_PTR)
+			big_data[big_data_i++] = &(heap[i]);
 		i++;
 	}
 };
@@ -322,11 +326,13 @@ int main(void)
 	print_heap(0, from_hp);
 	printf("to_space:\n");
 	print_heap(HEAP_SIZE, to_hp);
+	printf("\nBig data:\n");
+	print_big_data();
 	printf("roots:\n");
 	print_roots();
 	printf("soft pointers:\n");
 	print_other_ptrs();
-	printf("\nfinialized pointers:\n");
+	printf("finialized pointers:\n");
 	print_finilized_ptrs();
 	return 1;
 }
@@ -428,6 +434,13 @@ void print_finilized_ptrs()
 		printf("Finilized ptr -> %p\n", finilized_ptrs[i]);
 }
 
+void print_big_data()
+{
+	int i;
+	for(i=0; i<big_data_i; i++){
+		printf("Big data -> %p\n", big_data[i]);
+	}
+}
 
 //------------------------------------------------------------------------------------------
 // Test cases
