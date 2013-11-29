@@ -96,9 +96,8 @@ void gc()
 	scavenege_new(HEAP_SIZE);
 	old_to_hp = to_hp;
 
-	// scavenge big data
-	int i;
-	for(i=0; i<big_data_i; i++){
+	// scavenege big data
+	for(int i=0; i<big_data_i; i++){
 		scavenege_big_data(big_data[i]->value);
 	}
 	scavenege_new(old_to_hp);
@@ -142,9 +141,9 @@ Node* evacuate(Node *node)
 		//lambda
 		if(head_node->tag == CLAMBDA_ID){
 			Node *next_node = (node + 1);
-			int end = (intptr_t)next_node->value, i;
+			int end = (intptr_t)next_node->value;
 			copy_node(&heap[to_hp++], next_node);
-			for(i=0; i<end; i++){
+			for(int i=0; i<end; i++){
 				next_node = (next_node + 1);
 				copy_node(&heap[to_hp++], next_node);
 			}
@@ -156,15 +155,14 @@ Node* evacuate(Node *node)
 
 void traverse_roots()
 {
-	int i;
-	for(i=0; i<roots_i; i++)
+	for(int i=0; i<roots_i; i++)
 		roots[i] = evacuate(roots[i]);
 };
 
 int traverse_other_ptrs()
 {
-	int i, old_to_hp= to_hp;
-	for(i=0; i<other_ptr_i; i++){
+	int old_to_hp= to_hp;
+	for(int i=0; i<other_ptr_i; i++){
 		Node *node = (Node*)(other_ptrs[i]->value);
 		if(node->tag == CFWD_PTR) //something else was referring to that node
 			other_ptrs[i]->value = node->value;
@@ -225,13 +223,11 @@ void scaveneging(Node *node, Node *end_node)
 
 void traverse_free()
 {
-	int i = 0;
-	while(i<from_hp){
+	for(int i=0; i<from_hp; i++){
 		if(heap[i].tag == CCONST_STR || heap[i].tag == CBDATA_PTR){
 			free(heap[i].value);
 			heap[i].value = CNULL;
 		}
-		i++;
 	}
 };
 
@@ -279,30 +275,30 @@ Node* add_range(Node* node1, Node* node2)
 
 Node* add_data(intptr_t c, int n, Node **nodes)
 {
-	int i;
 	Node *head_node = add_node(CDATA_HEAD, (void*) c);
-	for(i=0; i<n; i++)
+	for(int i=0; i<n; i++)
 		add_node(CDATA_ND, nodes[i]);
 	return head_node;
 }
 
 Node* add_big_data(intptr_t n, intptr_t c, Node **nodes)
 {
-	int i;
+	//construct big data out of deafult heap
 	Node *big_data = malloc(sizeof(Node) * (n+2) );
 	big_data[0]= (Node){CBDATA_HEAD_N, (void *)n};
 	big_data[1]= (Node){CBDATA_HEAD_C, (void *)c};
-	for(i=0; i<n; i++)
+	for(int i=0; i<n; i++)
 		big_data[i+2] = (Node){CBDATA_ND, nodes[i]};
+
+	//add reference to that memory area
 	return add_node(CBDATA_PTR, (void *) big_data);
 }
 
 Node* add_lambda(intptr_t id, intptr_t n, Node **nodes)
 {
-	int i;
 	Node *head_node=add_node(CLAMBDA_ID, (void*)id);
 	add_node(CLAMBDA_N, (void *)n);
-	for(i=0; i<n; i++)
+	for(int i=0; i<n; i++)
 		add_node(CLAMBDA_ARG, nodes[i]);
 	return head_node;
 }
@@ -457,15 +453,13 @@ void print_nodes(Node *node, Node *end_node)
 
 void print_roots()
 {
-	int i;
-	for(i=0; i<roots_i; i++)
+	for(int i=0; i<roots_i; i++)
 		printf("Root -> %p\n", roots[i]);
 }
 
 void print_other_ptrs()
 {
-	int i;
-	for(i=0; i<other_ptr_i; i++){
+	for(int i=0; i<other_ptr_i; i++){
 		if(other_ptrs[i]->tag == CWEAK_PTR)
 			printf("Weak ptr -> %p\n", other_ptrs[i]);
 		if(other_ptrs[i]->tag == CSOFT_PTR)
@@ -475,15 +469,13 @@ void print_other_ptrs()
 
 void print_finilized_ptrs()
 {
-	int i;
-	for(i=0; i<finilized_ptr_i; i++)
+	for(int i=0; i<finilized_ptr_i; i++)
 		printf("Finilized ptr -> %p\n", finilized_ptrs[i]);
 }
 
 void print_big_data()
 {
-	int i;
-	for(i=0; i<big_data_i; i++){
+	for(int i=0; i<big_data_i; i++){
 		printf("Big data -> %p\n", big_data[i]);
 		Node *head_node = big_data[i]->value;
 		Node *end_node = head_node + (intptr_t)(head_node->value) + 2;
@@ -524,9 +516,8 @@ void test_case4() //range data
 
 void test_case5() //data
 {
-	int i;
 	Node* nodes[5];
-	for(i=0; i<5; i++)
+	for(int i=0; i<5; i++)
 		nodes[i] = add_int(10 +i);
 	add_root(add_data(7, 5, nodes));
 }
@@ -539,9 +530,8 @@ void test_case6() //bool
 
 void test_case7() //lambda expression
 {
-	int i;
 	Node* nodes[5];
-	for(i=0; i<5; i++)
+	for(int i=0; i<5; i++)
 		nodes[i] = add_int(10 +i);
 	add_root(add_lambda(7, 5, nodes));
 }
@@ -558,8 +548,7 @@ void test_case8() //weak pointers
 
 void test_case9() //soft pointers
 {
-	int i;
-	for(i=0; i<7; i++){
+	for(int i=0; i<7; i++){
 		add_root(add_soft_ptr(add_int(10 +i)));
 	}
 }
@@ -576,9 +565,8 @@ void test_case10() //phantom pointers
 
 void test_case11() // big data
 {
-	int i;
 	Node* nodes[5];
-	for(i=0; i<5; i++)
+	for(int i=0; i<5; i++)
 		nodes[i] = add_int(10 +i);
 	add_root(add_big_data(5, 7, nodes));
 	add_big_data(5, 7, nodes);

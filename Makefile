@@ -1,2 +1,4 @@
+CFLAGS = -std=c99
+
 gc : gc.c
-	gcc -o $@ $<
+	gcc -o $@ $< $(CFLAGS)
