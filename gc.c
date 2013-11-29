@@ -227,7 +227,7 @@ void traverse_free()
 {
 	int i = 0;
 	while(i<from_hp){
-		if(heap[i].tag == CCONST_STR){
+		if(heap[i].tag == CCONST_STR || heap[i].tag == CBDATA_PTR){
 			free(heap[i].value);
 			heap[i].value = CNULL;
 		}
@@ -581,4 +581,5 @@ void test_case11() // big data
 	for(i=0; i<5; i++)
 		nodes[i] = add_int(10 +i);
 	add_root(add_big_data(5, 7, nodes));
+	add_big_data(5, 7, nodes);
 }
