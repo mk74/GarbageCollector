@@ -41,6 +41,7 @@ Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N], *big_data[
 int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
 
 void gc();
+void change_spaces();
 void collection();
 Node* evacuate(Node *node);
 void traverse_roots();
@@ -49,6 +50,7 @@ void scavenege_new(Node *to_new);
 void scavenege_big_data(Node *head_node);
 void scaveneging(Node *node, Node *end_node);
 void traverse_free();
+void clear_helper_buffers();
 
 Node* add_node(char type, void* value);
 Node* add_bool(bool value);
@@ -73,6 +75,7 @@ void print_other_ptrs();
 void print_finilized_ptrs();
 void print_big_data();
 void print_mem_state();
+void print_gc_state();
 
 void test_case1();
 void test_case2();
@@ -93,7 +96,13 @@ void test_case11();
 void gc()
 {
 	collection();
+	change_spaces();
+	printf("\nGC state:\n");
+	print_gc_state();
+	clear_helper_buffers();
+}
 
+void change_spaces(){
 	//switch from/to spaces: swap from_start with to_start, set from_hp and to_hp
 	Node *tmp = from_start;
 	from_start = to_start;
@@ -101,6 +110,12 @@ void gc()
 	from_hp = to_hp;
 	to_hp = to_start;
 	to_mem_end = to_start + HEAP_SIZE;
+}
+
+void clear_helper_buffers(){
+	other_ptr_i = 0;
+	finilized_ptr_i = 0;
+	big_data_i = 0;
 }
 
 void collection()
@@ -220,10 +235,12 @@ void scaveneging(Node *node, Node *end_node)
 
 		//weak/soft pointers
 		if(node->tag == CWEAK_PTR || node->tag == CSOFT_PTR){
-			if(((Node*)node->value)->tag == CFWD_PTR)
-				node->value = evacuate(node->value);
-			else
-				other_ptrs[other_ptr_i++] = node;
+			if(node->value!=CNULL){
+				if(((Node*)node->value)->tag == CFWD_PTR)
+					node->value = evacuate(node->value);
+				else
+					other_ptrs[other_ptr_i++] = node;
+			}
 		}
 
 		//finilized phantom pointers
@@ -367,7 +384,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case4();
+	test_case11();
 	printf("After data initialization:\n");
 	print_mem_state();
 
@@ -394,15 +411,19 @@ void print_mem_state(){
 	print_nodes(from_start, from_hp);
 	printf("to_space: %p-%p END: %p\n", to_start, to_hp, to_mem_end);
 	print_nodes(to_start, to_hp);
-	printf("\nBig data:\n");
-	print_big_data();
 	printf("roots:\n");
 	print_roots();
-	printf("soft pointers:\n");
+
+};
+
+void print_gc_state(){
+	printf("big data:\n");
+	print_big_data();
+	printf("soft pointers checked at the end:\n");
 	print_other_ptrs();
 	printf("finialized pointers:\n");
-	print_finilized_ptrs();
-};
+	print_finilized_ptrs();	
+}
 
 void print_nodes(Node *node, Node *end_node)
 {
