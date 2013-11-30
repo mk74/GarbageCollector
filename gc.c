@@ -35,7 +35,7 @@ typedef struct node{
 } Node;
 
 Node heap[2*HEAP_SIZE] = {0};
-Node *from_start = &heap[0], *from_hp = &heap[0], *to_start = &heap[HEAP_SIZE], *to_hp = &heap[HEAP_SIZE];
+Node *from_start = &heap[0], *from_hp= &heap[0], *to_start = &heap[HEAP_SIZE], *to_hp = &heap[HEAP_SIZE], *to_mem_end = &heap[2*HEAP_SIZE];
 
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N], *big_data[ROOTS_N];
 int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
@@ -92,6 +92,7 @@ void test_case11();
 void gc()
 {
 	collection();
+
 }
 
 void collection()
@@ -176,7 +177,7 @@ void traverse_other_ptrs()
 		if(node->tag == CFWD_PTR) //something else was referring to that node
 			other_ptrs[i]->value = node->value;
 		else{
-			int left_mem = &heap[2 * HEAP_SIZE] - to_hp;
+			int left_mem = to_mem_end - to_hp;
 			if(other_ptrs[i]->tag == CSOFT_PTR && left_mem > LOW_MEM_THRESHOLD){
 				other_ptrs[i]->value = evacuate(node);
 			}else
@@ -358,7 +359,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case8();
+	test_case9();
 	printf("Before:\nfrom_space:\n");
 	print_nodes(from_start, from_hp);
 	printf("roots:\n");
