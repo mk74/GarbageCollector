@@ -40,6 +40,8 @@ Node *from_start = &heap[0], *from_hp= &heap[0], *to_start = &heap[HEAP_SIZE], *
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N], *big_data[ROOTS_N];
 int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
 
+int gc_counter = 0;
+
 void gc();
 void change_spaces();
 void collection();
@@ -95,11 +97,26 @@ void test_case11();
 void gc()
 {
 	//init
+	gc_counter++;
 	finilized_ptr_i = 0;
 	big_data_i = 0;
 
-	collection(to_start);
-	change_spaces();
+	//minor collection
+	collection(to_hp);
+	if(gc_counter==2){
+		//major collection
+		///XXX get rid of
+		printf("\nMajor collection is happening!\n");
+		printf("finialized pointers:\n");
+		print_finilized_ptrs();	
+		
+		change_spaces();
+
+		finilized_ptr_i = 0; big_data_i =0; other_ptr_i = 0;
+		collection(to_start);
+		gc_counter = 0;
+	}
+	from_hp = from_start;
 
 	//print/clear gc state
 	printf("\nGC state:\n");
@@ -144,6 +161,9 @@ void collection(Node *old_to_hp)
 
 Node* evacuate(Node *node)
 {
+	if(node>=to_start && node<to_hp)
+		return node;
+
 	if(node->tag == CFWD_PTR)	//check whether already evacuated
 		return node->value;
 	else {
@@ -385,20 +405,17 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case10();
+	test_case4();
 	printf("After data initialization:\n");
 	print_mem_state();
 
-	gc();
+	
 
-
-	printf("\n\nAfter 1 collection:\n");
-	print_mem_state();
-
-	gc();
-
-	printf("\n\nAfter 2 collection:\n");
-	print_mem_state();
+	for(int i=0; i<4; i++){
+		gc();
+		printf("\n\nAfter %d collection:\n", i+1);
+		print_mem_state();
+	}
 	return 1;
 }
 
