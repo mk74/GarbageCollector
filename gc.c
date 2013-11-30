@@ -107,7 +107,8 @@ void gc()
 	other_ptr_i = 0;
 }
 
-void change_spaces(){
+void change_spaces()
+{
 	//switch from/to spaces: swap from_start with to_start, set from_hp and to_hp
 	Node *tmp = from_start;
 	from_start = to_start;
@@ -140,7 +141,7 @@ void collection()
 
 	//traverse and free unused objects(strings and bigdata)
 	traverse_free(from_start, from_hp);
-};
+}
 
 Node* evacuate(Node *node)
 {
@@ -184,13 +185,13 @@ Node* evacuate(Node *node)
 
 		return head_node;
 	}
-};
+}
 
 void traverse_roots()
 {
 	for(int i=0; i<roots_i; i++)
 		roots[i] = evacuate(roots[i]);
-};
+}
 
 void traverse_other_ptrs()
 {
@@ -206,7 +207,7 @@ void traverse_other_ptrs()
 				other_ptrs[i]->value = CNULL;
 		}
 	}
-};
+}
 
 void scavenege_new(Node *to_new)
 {
@@ -218,7 +219,8 @@ void scavenege_new(Node *to_new)
 	}
 }
 
-void scavenege_big_data(Node *head_node){
+void scavenege_big_data(Node *head_node)
+{
 	Node *end_node = head_node + (intptr_t)(head_node->value) + 2;
 	head_node+=2;
 	scaveneging(head_node, end_node);
@@ -252,7 +254,7 @@ void scaveneging(Node *node, Node *end_node)
 			big_data[big_data_i++] = node;
 		node++;
 	}
-};
+}
 
 void traverse_free(Node *node, Node *end_node)
 {
@@ -272,7 +274,7 @@ void traverse_free(Node *node, Node *end_node)
 
 		node++;
 	}
-};
+}
 
 
 //------------------------------------------------------------------------------------------
@@ -300,7 +302,8 @@ Node* add_weak_ptr(Node *node)
 	return add_node(CWEAK_PTR, node);
 }
 
-Node* add_phantom_ptr(Node *node){
+Node* add_phantom_ptr(Node *node)
+{
 	return add_node(CPHANTOM_PTR_NF, node);
 }
 
@@ -358,7 +361,8 @@ Node* add_node(char type, void *value)
 	return from_hp++;
 }
 
-void copy_node(Node *dst, Node *src){
+void copy_node(Node *dst, Node *src)
+{
 	dst->tag = src->tag;
 	dst->value = src->value;
 }
@@ -405,7 +409,8 @@ int main(void)
 //------------------------------------------------------------------------------------------
 
 
-void print_mem_state(){
+void print_mem_state()
+{
 	printf("from_space: %p-%p\n", from_start, from_hp);
 	print_nodes(from_start, from_hp);
 	printf("to_space: %p-%p END: %p\n", to_start, to_hp, to_mem_end);
@@ -416,9 +421,10 @@ void print_mem_state(){
 	print_big_data();
 	printf("finialized pointers:\n");
 	print_finilized_ptrs();	
-};
+}
 
-void print_gc_state(){
+void print_gc_state()
+{
 
 	printf("soft pointers to check:\n");
 	print_other_ptrs();
@@ -545,7 +551,7 @@ void test_case1() //traversing roots
 	add_root(add_int(10));
 	add_root(add_int(30));
 	add_int(20);
-};
+}
 
 void test_case2() //scavenging
 {
@@ -553,7 +559,7 @@ void test_case2() //scavenging
 	add_root(add_ptr(ptr));
 	add_root(add_int(20));
 	add_root(add_ptr(ptr));
-};
+}
 
 void test_case3() //string data
 {
