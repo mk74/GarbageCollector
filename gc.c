@@ -367,7 +367,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case3();
+	test_case4();
 	printf("After data initialization:\n");
 	print_mem_state();
 
@@ -422,7 +422,7 @@ void print_nodes(Node *node, Node *end_node)
 				printf("String: %s\n", (char *)node->value);
 				break;
 			case CRANGE:
-				printf("Range: %p %p\n", node->value, (++node)->value);
+				printf("Range: %p\n", node->value);
 				break;
 
 			case CDATA_HEAD:
