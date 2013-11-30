@@ -98,7 +98,7 @@ void gc()
 	finilized_ptr_i = 0;
 	big_data_i = 0;
 
-	collection();
+	collection(to_start);
 	change_spaces();
 
 	//print/clear gc state
@@ -118,13 +118,12 @@ void change_spaces()
 	to_mem_end = to_start + HEAP_SIZE;
 }
 
-void collection()
+void collection(Node *old_to_hp)
 {
-	Node* old_to_hp;
 
 	//traverse and scavenege roots
 	traverse_roots();
-	scavenege_new(to_start);
+	scavenege_new(old_to_hp);
 	
 
 	// scavenege big data
