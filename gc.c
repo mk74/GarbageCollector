@@ -44,7 +44,7 @@ void gc();
 void collection();
 Node* evacuate(Node *node);
 void traverse_roots();
-Node* traverse_other_ptrs();
+void traverse_other_ptrs();
 void scavenege_new(Node *to_new);
 void scavenege_big_data(Node *head_node);
 void scaveneging(Node *node, Node *end_node);
@@ -97,20 +97,25 @@ void gc()
 void collection()
 {
 	Node* old_to_hp;
+
+	//traverse and scavenege roots
 	traverse_roots();
 	scavenege_new(to_start);
-	old_to_hp = to_hp;
+	
 
 	// scavenege big data
+	old_to_hp = to_hp;
 	for(int i=0; i<big_data_i; i++){
 		scavenege_big_data(big_data[i]->value);
 	}
 	scavenege_new(old_to_hp);
 
-	old_to_hp = traverse_other_ptrs();
-	if(old_to_hp != to_hp)
-		scavenege_new(old_to_hp);
+	//traverse and scavenege weak/soft pointers
+	old_to_hp = to_hp;
+	traverse_other_ptrs();
+	scavenege_new(old_to_hp);
 
+	//traverse and free unused objects(strings and bigdata)
 	traverse_free(from_start, from_hp);
 };
 
@@ -164,9 +169,8 @@ void traverse_roots()
 		roots[i] = evacuate(roots[i]);
 };
 
-Node* traverse_other_ptrs()
+void traverse_other_ptrs()
 {
-	Node *old_to_hp= to_hp;
 	for(int i=0; i<other_ptr_i; i++){
 		Node *node = (Node*)(other_ptrs[i]->value);
 		if(node->tag == CFWD_PTR) //something else was referring to that node
@@ -179,13 +183,11 @@ Node* traverse_other_ptrs()
 				other_ptrs[i]->value = CNULL;
 		}
 	}
-	return old_to_hp;
 };
 
 //void scavenege_new(int to_start)
 void scavenege_new(Node *to_new)
 {
-	// int to_end = to_hp;
 	Node *to_end = to_hp;
 	while(to_new!=to_end){ //kept scavenging as long as new things are added to to_space
 		scaveneging(to_new, to_end);
@@ -356,7 +358,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case10();
+	test_case8();
 	printf("Before:\nfrom_space:\n");
 	print_nodes(from_start, from_hp);
 	printf("roots:\n");
