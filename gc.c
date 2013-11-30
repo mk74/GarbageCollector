@@ -35,7 +35,7 @@ typedef struct node{
 } Node;
 
 Node heap[2*HEAP_SIZE] = {0};
-int from_start = 0, from_hp = 0, to_start = HEAP_SIZE, to_hp = HEAP_SIZE;
+Node *from_start = &heap[0], *from_hp = &heap[0], *to_start = &heap[HEAP_SIZE], *to_hp = &heap[HEAP_SIZE];
 
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N], *big_data[ROOTS_N];
 int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
@@ -44,8 +44,8 @@ void gc();
 void collection();
 Node* evacuate(Node *node);
 void traverse_roots();
-int traverse_other_ptrs();
-void scavenege_new(int i);
+Node* traverse_other_ptrs();
+void scavenege_new(Node *to_new);
 void scavenege_big_data(Node *head_node);
 void scaveneging(Node *node, Node *end_node);
 void traverse_free();
@@ -67,7 +67,6 @@ void copy_node(Node *dst, Node*src);
 void add_root(Node *ptr);
 void finilize_ptr(Node *node);
 
-void print_heap(int i, int hn);
 void print_nodes(Node *node, Node *end_node);
 void print_roots();
 void print_other_ptrs();
@@ -97,9 +96,9 @@ void gc()
 
 void collection()
 {
-	int old_to_hp;
+	Node* old_to_hp;
 	traverse_roots();
-	scavenege_new(HEAP_SIZE);
+	scavenege_new(to_start);
 	old_to_hp = to_hp;
 
 	// scavenege big data
@@ -112,7 +111,7 @@ void collection()
 	if(old_to_hp != to_hp)
 		scavenege_new(old_to_hp);
 
-	traverse_free(&heap[from_start], &heap[from_hp]);
+	traverse_free(from_start, from_hp);
 };
 
 Node* evacuate(Node *node)
@@ -121,9 +120,9 @@ Node* evacuate(Node *node)
 		return node->value;
 	else {
 		//evacuate
-		copy_node(&(heap[to_hp]), node);
+		copy_node(to_hp, node);
 		node->tag = CFWD_PTR;
-		node->value = &(heap[to_hp++]);
+		node->value = to_hp++;
 
 		Node *head_node = node->value;
 
@@ -132,14 +131,14 @@ Node* evacuate(Node *node)
 		//ranges
 		if(head_node->tag == CRANGE){
 			Node *next_node = (node + 1);
-			copy_node(&heap[to_hp++], next_node);
+			copy_node(to_hp++, next_node);
 		}
 
 		//data
 		if(head_node->tag == CDATA_HEAD){
 			Node *next_node = (node + 1);
 			while(next_node->tag == CDATA_ND){
-				copy_node(&heap[to_hp++], next_node);
+				copy_node(to_hp++, next_node);
 				next_node = (next_node + 1);
 			}
 		}
@@ -148,10 +147,10 @@ Node* evacuate(Node *node)
 		if(head_node->tag == CLAMBDA_ID){
 			Node *next_node = (node + 1);
 			int end = (intptr_t)next_node->value;
-			copy_node(&heap[to_hp++], next_node);
+			copy_node(to_hp++, next_node);
 			for(int i=0; i<end; i++){
 				next_node = (next_node + 1);
-				copy_node(&heap[to_hp++], next_node);
+				copy_node(to_hp++, next_node);
 			}
 		}
 
@@ -165,15 +164,15 @@ void traverse_roots()
 		roots[i] = evacuate(roots[i]);
 };
 
-int traverse_other_ptrs()
+Node* traverse_other_ptrs()
 {
-	int old_to_hp= to_hp;
+	Node *old_to_hp= to_hp;
 	for(int i=0; i<other_ptr_i; i++){
 		Node *node = (Node*)(other_ptrs[i]->value);
 		if(node->tag == CFWD_PTR) //something else was referring to that node
 			other_ptrs[i]->value = node->value;
 		else{
-			int left_mem = 2 * HEAP_SIZE - to_hp;
+			int left_mem = &heap[2 * HEAP_SIZE] - to_hp;
 			if(other_ptrs[i]->tag == CSOFT_PTR && left_mem > LOW_MEM_THRESHOLD){
 				other_ptrs[i]->value = evacuate(node);
 			}else
@@ -183,12 +182,14 @@ int traverse_other_ptrs()
 	return old_to_hp;
 };
 
-void scavenege_new(int to_start)
+//void scavenege_new(int to_start)
+void scavenege_new(Node *to_new)
 {
-	int to_end = to_hp;
-	while(to_start!=to_end){ //kept scavenging as long as new things are added to to_space
-		scaveneging(&heap[to_start], &heap[to_end]);
-		to_start = to_end;
+	// int to_end = to_hp;
+	Node *to_end = to_hp;
+	while(to_new!=to_end){ //kept scavenging as long as new things are added to to_space
+		scaveneging(to_new, to_end);
+		to_new = to_end;
 		to_end = to_hp;
 	}
 }
@@ -326,9 +327,9 @@ Node* add_bool(bool value)
 
 Node* add_node(char type, void *value)
 {
-	Node node = {type, value};
-	heap[from_hp] = node;
-	return &(heap[from_hp++]);
+	from_hp->tag = type;
+	from_hp->value = value;
+	return from_hp++;
 }
 
 void copy_node(Node *dst, Node *src){
@@ -355,9 +356,9 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case11();
+	test_case10();
 	printf("Before:\nfrom_space:\n");
-	print_heap(0, from_hp);
+	print_nodes(from_start, from_hp);
 	printf("roots:\n");
 	print_roots();
 
@@ -366,9 +367,9 @@ int main(void)
 
 	printf("\n\nAfter:\n");
 	printf("from_space:\n");
-	print_heap(0, from_hp);
+	print_nodes(from_start, from_hp);
 	printf("to_space:\n");
-	print_heap(HEAP_SIZE, to_hp);
+	print_nodes(to_start, to_hp);
 	printf("\nBig data:\n");
 	print_big_data();
 	printf("roots:\n");
@@ -384,10 +385,6 @@ int main(void)
 //------------------------------------------------------------------------------------------
 // Debugging functions
 //------------------------------------------------------------------------------------------
-
-void print_heap(int i, int hn){
-	print_nodes(&(heap[i]), &(heap[hn]));
-}
 
 void print_nodes(Node *node, Node *end_node)
 {
