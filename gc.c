@@ -35,12 +35,13 @@ typedef struct node{
 } Node;
 
 Node heap[2*HEAP_SIZE] = {0};
-int from_hp = 0, to_hp = HEAP_SIZE;
+int from_start = 0, from_hp = 0, to_start = HEAP_SIZE, to_hp = HEAP_SIZE;
 
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N], *big_data[ROOTS_N];
 int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
 
 void gc();
+void collection();
 Node* evacuate(Node *node);
 void traverse_roots();
 int traverse_other_ptrs();
@@ -91,6 +92,11 @@ void test_case11();
 
 void gc()
 {
+	collection();
+}
+
+void collection()
+{
 	int old_to_hp;
 	traverse_roots();
 	scavenege_new(HEAP_SIZE);
@@ -106,7 +112,7 @@ void gc()
 	if(old_to_hp != to_hp)
 		scavenege_new(old_to_hp);
 
-	traverse_free(&heap[0], &heap[from_hp]);
+	traverse_free(&heap[from_start], &heap[from_hp]);
 };
 
 Node* evacuate(Node *node)
