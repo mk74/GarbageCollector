@@ -72,6 +72,7 @@ void print_roots();
 void print_other_ptrs();
 void print_finilized_ptrs();
 void print_big_data();
+void print_mem_state();
 
 void test_case1();
 void test_case2();
@@ -93,6 +94,13 @@ void gc()
 {
 	collection();
 
+	//switch from/to spaces: swap from_start with to_start, set from_hp and to_hp
+	Node *tmp = from_start;
+	from_start = to_start;
+	to_start = tmp;
+	from_hp = to_hp;
+	to_hp = to_start;
+	to_mem_end = to_start + HEAP_SIZE;
 }
 
 void collection()
@@ -359,19 +367,32 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case9();
-	printf("Before:\nfrom_space:\n");
-	print_nodes(from_start, from_hp);
-	printf("roots:\n");
-	print_roots();
+	test_case3();
+	printf("After data initialization:\n");
+	print_mem_state();
 
 	gc();
 
 
-	printf("\n\nAfter:\n");
-	printf("from_space:\n");
+	printf("\n\nAfter 1 collection:\n");
+	print_mem_state();
+
+	gc();
+
+	printf("\n\nAfter 2 collection:\n");
+	print_mem_state();
+	return 1;
+}
+
+
+//------------------------------------------------------------------------------------------
+// Debugging functions
+//------------------------------------------------------------------------------------------
+
+void print_mem_state(){
+	printf("from_space: %p-%p\n", from_start, from_hp);
 	print_nodes(from_start, from_hp);
-	printf("to_space:\n");
+	printf("to_space: %p-%p END: %p\n", to_start, to_hp, to_mem_end);
 	print_nodes(to_start, to_hp);
 	printf("\nBig data:\n");
 	print_big_data();
@@ -381,13 +402,7 @@ int main(void)
 	print_other_ptrs();
 	printf("finialized pointers:\n");
 	print_finilized_ptrs();
-	return 1;
-}
-
-
-//------------------------------------------------------------------------------------------
-// Debugging functions
-//------------------------------------------------------------------------------------------
+};
 
 void print_nodes(Node *node, Node *end_node)
 {
