@@ -40,10 +40,10 @@ Node *from_start = &heap[0], *from_hp= &heap[0], *to_start = &heap[HEAP_SIZE], *
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finalized_ptrs[ROOTS_N], *big_data[ROOTS_N];
 int roots_i=0, other_ptr_i=0, finalized_ptr_i=0, big_data_i=0;
 
-int gc_counter = 0;
+int collector_counter = 0;
 
 //main GC funcitons
-void gc();
+void collector();
 void change_spaces();
 void minor_collection();
 void major_collection();
@@ -80,7 +80,7 @@ void print_other_ptrs();
 void print_finalized_ptrs();
 void print_big_data();
 void print_mem_state();
-void print_gc_state();
+void print_collector_state();
 
 //test units
 void test_case1();
@@ -101,23 +101,19 @@ void test_case11();
 //------------------------------------------------------------------------------------------
 
 
-void gc()
+void collector()
 {
 	//init
-	gc_counter++;
+	collector_counter++;
 	finalized_ptr_i = 0;
 	big_data_i = 0;
 
 	minor_collection();
-	if(gc_counter==1){
+	if(collector_counter==1){
 		major_collection();
-		gc_counter = 0;
+		collector_counter = 0;
 	}
 	from_hp = from_start;  //forget about any old data put in from_space
-
-	//print and clear gc state
-	printf("\n[DEBUG]GC state:\n");
-	print_gc_state();
 	other_ptr_i = 0;
 }
 
@@ -416,7 +412,7 @@ int main(void)
 	print_mem_state();
 
 	for(int i=0; i<4; i++){
-		gc();
+		collector();
 		printf("\n\n[DEBUG]After %d collection:\n", i+1);
 		print_mem_state();
 	}
@@ -437,15 +433,12 @@ void print_mem_state()
 	print_nodes(to_start, to_hp);
 	printf("roots:\n");
 	print_roots();
-	printf("big data:\n");
 	print_big_data();
-	printf("finialized pointers:\n");
 	print_finalized_ptrs();	
 }
 
-void print_gc_state()
+void print_collector_state()
 {
-	printf("soft pointers to check:\n");
 	print_other_ptrs();
 }
 
@@ -538,6 +531,9 @@ void print_roots()
 
 void print_other_ptrs()
 {
+	if(other_ptr_i==0)
+		return;
+	printf("soft pointers to check:\n");
 	for(int i=0; i<other_ptr_i; i++){
 		if(other_ptrs[i]->tag == CWEAK_PTR)
 			printf("Weak ptr -> %p\n", other_ptrs[i]);
@@ -548,12 +544,18 @@ void print_other_ptrs()
 
 void print_finalized_ptrs()
 {
+	if(finalized_ptr_i==0)
+		return;
+	printf("finialized pointers:\n");
 	for(int i=0; i<finalized_ptr_i; i++)
 		printf("Finilized ptr -> %p\n", finalized_ptrs[i]);
 }
 
 void print_big_data()
 {
+	if(big_data_i==0)
+		return;
+	printf("big data:\n");
 	for(int i=0; i<big_data_i; i++){
 		printf("Big data -> %p\n", big_data[i]);
 		Node *head_node = big_data[i]->value;
