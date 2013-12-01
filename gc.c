@@ -61,7 +61,7 @@ void swap_spaces();
 void collection(Node *old_to_hp);
 Node* evacuate(Node *node);
 void traverse_roots();
-void traverse_other_ptrs();
+void traverse_other_ptrs(int type);
 void scavenege_new(Node *to_new);
 void scavenege_big_data(Node *head_node);
 void scaveneging(Node *node, Node *end_node);
@@ -177,7 +177,8 @@ void collection(Node *old_to_hp)
 
 	//traverse and scavenege weak/soft pointers
 	old_to_hp = to_hp;
-	traverse_other_ptrs();
+	traverse_other_ptrs(CSOFT_PTR);
+	traverse_other_ptrs(CWEAK_PTR);
 	scavenege_new(old_to_hp);
 
 	//traverse and free unused objects(strings and bigdata)
@@ -236,9 +237,11 @@ void traverse_roots()
 		roots[i] = evacuate(roots[i]);
 }
 
-void traverse_other_ptrs()
+void traverse_other_ptrs(int type)
 {
 	for(int i=0; i<other_ptr_i; i++){
+		if(other_ptrs[i]->tag != type)
+			continue;
 		Node *node = (Node*)(other_ptrs[i]->value);
 		if(node->tag == CFWD_PTR) //something else was already referring to that node
 			other_ptrs[i]->value = node->value;
@@ -700,3 +703,6 @@ void test_case11() // big data
 	add_root(add_big_data(5, 7, nodes));
 	add_big_data(5, 7, nodes);
 }
+
+
+// test_heap1_start()
