@@ -106,6 +106,9 @@ void test_case9();
 void test_case10();
 void test_case11();
 
+void test_heap1_start();
+void test_heap1_continue();
+
 
 //------------------------------------------------------------------------------------------
 // Garbage collector
@@ -122,7 +125,7 @@ void collector()
 	if(generational_gc){
 		//generational copying garbage collector
 		minor_collection();
-		if(collector_counter==5){
+		if(collector_counter==10){
 			major_collection();
 			collector_counter = 0;
 		}
@@ -446,7 +449,7 @@ int main(int argc, char *argv[])
 	printf("[DEBUG]After data initialization:\n");
 	print_mem_state();
 
-	for(int i=0; i<2; i++){
+	for(int i=0; i<5; i++){
 		collector();
 		printf("\n\n[DEBUG]After %d collection:\n", i+1);
 		print_mem_state();
@@ -461,13 +464,15 @@ int main(int argc, char *argv[])
 
 void mutator_start(){
 	//the heap initialization
-	test_case9();
+	//test_case9();
+	test_heap1_start();
 }
 
 void mutator_continue(){
 	//finalized could be passed to this funciton, instead of being kept as global variable
 	print_finalized_ptrs();	
 
+	test_heap1_continue();
 	//new operations changing the heap
 
 }
@@ -493,14 +498,17 @@ void print_nodes(Node *node, Node *end_node)
 	while(node < end_node){
 		printf("%p:", node);
 		switch(node->tag){
+			case CNULL:
+				printf("Null ptr: %p\n", node->value);
+				break;
 			case CFWD_PTR:
 				printf("Forward ptr: %p\n", node->value);
 				break;
 			case CCONST_INT:
-				printf("INTEGER: %ld\n", (intptr_t)node->value);
+				printf("Integer: %ld\n", (intptr_t)node->value);
 				break;
 			case CPTR:
-				printf("POINTER: %p\n", node->value);
+				printf("Pointer: %p\n", node->value);
 				break;
 			case CCONST_STR:
 				printf("String: %s\n", (char *)node->value);
@@ -705,4 +713,24 @@ void test_case11() // big data
 }
 
 
-// test_heap1_start()
+
+
+void test_heap1_start()
+{
+	//linked list beginning
+	add_str("foo");
+	add_str("bar");
+	add_bool(true);
+	Node* nodes[] = {add_int(10), add_node(CNULL, NULL)};
+	add_root(add_data(1, 2, nodes));
+
+}
+
+void test_heap1_continue()
+{
+	add_str("foo");
+	add_str("bar");
+	add_bool(true);
+	Node* nodes[] = {add_int(10), roots[roots_i-1]};
+	roots[roots_i-1] = add_data(1, 2, nodes);
+}
