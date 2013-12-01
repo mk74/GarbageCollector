@@ -42,6 +42,7 @@ int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
 
 int gc_counter = 0;
 
+//main GC funcitons
 void gc();
 void change_spaces();
 void collection();
@@ -53,23 +54,24 @@ void scavenege_big_data(Node *head_node);
 void scaveneging(Node *node, Node *end_node);
 void traverse_free();
 
-Node* add_node(char type, void* value);
-Node* add_bool(bool value);
+//initialize data
 Node* add_int(intptr_t number);
+Node* add_bool(bool value);
+Node* add_str(char *str);
 Node* add_ptr(Node *ptr);
 Node* add_soft_ptr(Node *node);
 Node* add_weak_ptr(Node *node);
 Node* add_phantom_ptr(Node *node);
-Node* add_str(char[]);
 Node* add_range(Node* node1, Node* node2);
 Node* add_data(intptr_t c, int n, Node **nodes);
 Node* add_big_data(intptr_t n, intptr_t c, Node **nodes);
 Node* add_lambda(intptr_t id, intptr_t n, Node **nodes);
+Node* add_node(char type, void* value);
 void copy_node(Node *dst, Node*src);
-
 void add_root(Node *ptr);
 void finilize_ptr(Node *node);
 
+//debugging functions
 void print_nodes(Node *node, Node *end_node);
 void print_roots();
 void print_other_ptrs();
@@ -78,6 +80,8 @@ void print_big_data();
 void print_mem_state();
 void print_gc_state();
 
+
+//test units
 void test_case1();
 void test_case2();
 void test_case3();
@@ -162,7 +166,7 @@ void collection(Node *old_to_hp)
 Node* evacuate(Node *node)
 {
 	if(node>=to_start && node<to_hp)
-		return node;
+		return node;	//don't evacuate nodes from to_space (intergenerational pointers)
 
 	if(node->tag == CFWD_PTR)	//check whether already evacuated
 		return node->value;
@@ -306,6 +310,16 @@ Node* add_int(intptr_t number)
 	return add_node(CCONST_INT, (void *)number);
 }
 
+Node* add_bool(bool value)
+{
+	return add_node(CCONST_BOOL, (void *)value);	
+}
+
+Node* add_str(char *str)
+{
+	return add_node(CCONST_STR, (void *)strdup(str));	
+}
+
 Node* add_ptr(Node *node)
 {
 	return add_node(CPTR, node);
@@ -324,11 +338,6 @@ Node* add_weak_ptr(Node *node)
 Node* add_phantom_ptr(Node *node)
 {
 	return add_node(CPHANTOM_PTR_NF, node);
-}
-
-Node* add_str(char *str)
-{
-	return add_node(CCONST_STR, (void *)strdup(str));	
 }
 
 Node* add_range(Node* node1, Node* node2)
@@ -366,11 +375,6 @@ Node* add_lambda(intptr_t id, intptr_t n, Node **nodes)
 	for(int i=0; i<n; i++)
 		add_node(CLAMBDA_ARG, nodes[i]);
 	return head_node;
-}
-
-Node* add_bool(bool value)
-{
-	return add_node(CCONST_BOOL, (void *)value);	
 }
 
 Node* add_node(char type, void *value)
