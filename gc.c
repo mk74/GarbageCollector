@@ -4,9 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HEAP_SIZE  30
+#define HEAP_SIZE  100
 #define LOW_MEM_THRESHOLD 20
-#define ROOTS_N 10
+#define ROOTS_N 50
 
 #define CNULL 0
 #define CFWD_PTR 1
@@ -401,6 +401,10 @@ Node* add_lambda(intptr_t id, intptr_t n, Node **nodes)
 
 Node* add_node(char type, void *value)
 {
+	if(from_hp - from_start+1 >= HEAP_SIZE){
+		printf("You are trying to use too much memory\n");
+		exit(0);
+	}
 	from_hp->tag = type;
 	from_hp->value = value;
 	return from_hp++;
@@ -672,8 +676,9 @@ void test_case8() //weak pointers
 
 void test_case9() //soft pointers
 {
-	for(int i=0; i<7; i++){
-		add_root(add_soft_ptr(add_int(10 +i)));
+	int soft_ptrs_n = (HEAP_SIZE-LOW_MEM_THRESHOLD)/2 + 1;
+	for(int i=0; i<soft_ptrs_n; i++){
+		add_root(add_soft_ptr(add_int(i)));
 	}
 }
 
