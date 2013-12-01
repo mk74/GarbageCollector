@@ -651,8 +651,8 @@ void test_case2() //scavenging
 
 void test_case3() //string data
 {
-	add_root(add_str("maciek"));
-	add_str("kasia");
+	add_root(add_str("foo"));
+	add_str("bar");
 }
 
 void test_case4() //range data
