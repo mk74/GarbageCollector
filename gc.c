@@ -34,13 +34,19 @@ typedef struct node{
 	void *value;
 } Node;
 
+//from_space and to_space
 Node heap[2*HEAP_SIZE] = {0};
 Node *from_start = &heap[0], *from_hp= &heap[0], *to_start = &heap[HEAP_SIZE], *to_hp = &heap[HEAP_SIZE], *to_mem_end = &heap[2*HEAP_SIZE];
 
+//roots, soft/weak pointers, phantom pointers, big data
 Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finalized_ptrs[ROOTS_N], *big_data[ROOTS_N];
 int roots_i=0, other_ptr_i=0, finalized_ptr_i=0, big_data_i=0;
 
 int collector_counter = 0;
+bool generational_gc = true;
+
+//variables for time complexity analysis
+int scaveneging_counter = 0, copy_counter = 0;
 
 //mutator
 void mutator_start();
@@ -51,6 +57,7 @@ void collector();
 void change_spaces();
 void minor_collection();
 void major_collection();
+void swap_spaces();
 void collection(Node *old_to_hp);
 Node* evacuate(Node *node);
 void traverse_roots();
@@ -112,12 +119,19 @@ void collector()
 	finalized_ptr_i = 0;
 	big_data_i = 0;
 
-	minor_collection();
-	if(collector_counter==1){
-		major_collection();
-		collector_counter = 0;
+	if(generational_gc){
+		//generational copying garbage collector
+		minor_collection();
+		if(collector_counter==5){
+			major_collection();
+			collector_counter = 0;
+		}
+		from_hp = from_start;  //forget about any old data put in from_space
+	}else{
+		//copying garbage collector
+		collection(to_start);
+		swap_spaces();
 	}
-	from_hp = from_start;  //forget about any old data put in from_space
 	other_ptr_i = 0;
 }
 
@@ -126,13 +140,7 @@ void minor_collection(){
 }
 
 void major_collection(){
-	//switch from_space and to_space: swap from_start with to_start, set from_hp and to_hp
-	Node *tmp = from_start;
-	from_start = to_start;
-	to_start = tmp;
-	from_hp = to_hp;
-	to_hp = to_start;
-	to_mem_end = to_start + HEAP_SIZE;
+	swap_spaces();
 
 	//init collection and collect
 	big_data_i =0; other_ptr_i = 0;
@@ -142,6 +150,16 @@ void major_collection(){
 	for(int i=0; i<finalized_ptr_i; i++)
 		if(finalized_ptrs[i]->tag == CFWD_PTR)
 			finalized_ptrs[i] = finalized_ptrs[i]->value;
+}
+
+void swap_spaces(){
+	//switch from_space and to_space: swap from_start with to_start, set from_hp and to_hp
+	Node *tmp = from_start;
+	from_start = to_start;
+	to_start = tmp;
+	from_hp = to_hp;
+	to_hp = to_start;
+	to_mem_end = to_start + HEAP_SIZE;
 }
 
 void collection(Node *old_to_hp)
@@ -253,6 +271,8 @@ void scavenege_big_data(Node *head_node)
 
 void scaveneging(Node *node, Node *end_node)
 {
+	scaveneging_counter += (end_node - node);
+
 	while(node<end_node){
 		if(node->tag == CPTR || node->tag == CRANGE || node->tag == CDATA_ND 
 		   || node->tag == CPHANTOM_PTR_NF || node->tag == CLAMBDA_ARG || node->tag == CBDATA_ND)
@@ -388,6 +408,8 @@ Node* add_node(char type, void *value)
 
 void copy_node(Node *dst, Node *src)
 {
+	copy_counter++;
+
 	dst->tag = src->tag;
 	dst->value = src->value;
 }
@@ -409,25 +431,30 @@ void finalize_ptr(Node* node)
 //------------------------------------------------------------------------------------------
 
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	if(argc>1)
+		generational_gc = (atoi(argv[1]) == 1)	? true : false;
 	mutator_start();
 	printf("[DEBUG]After data initialization:\n");
 	print_mem_state();
 
-	for(int i=0; i<4; i++){
+	for(int i=0; i<2; i++){
 		collector();
 		printf("\n\n[DEBUG]After %d collection:\n", i+1);
 		print_mem_state();
 
 		mutator_continue();
 	}
+
+	printf("\n\nTime complexity report:\n");
+	printf("\tScaveneging:\t\t%d\n\tCopying:\t\t%d\n", scaveneging_counter, copy_counter);
 	return 1;
 }
 
 void mutator_start(){
 	//the heap initialization
-	test_case10();
+	test_case9();
 }
 
 void mutator_continue(){
@@ -539,7 +566,7 @@ void print_roots()
 {
 	if(roots_i==0)
 		return;
-	printf("roots:\n");
+	printf("roots[%d]:\n", roots_i);
 	for(int i=0; i<roots_i; i++)
 		printf("Root -> %p\n", roots[i]);
 }
@@ -548,7 +575,7 @@ void print_other_ptrs()
 {
 	if(other_ptr_i==0)
 		return;
-	printf("soft pointers to check:\n");
+	printf("soft/weak pointers to check[%d]:\n", other_ptr_i);
 	for(int i=0; i<other_ptr_i; i++){
 		if(other_ptrs[i]->tag == CWEAK_PTR)
 			printf("Weak ptr -> %p\n", other_ptrs[i]);
@@ -561,7 +588,7 @@ void print_finalized_ptrs()
 {
 	if(finalized_ptr_i==0)
 		return;
-	printf("\nMutator:\nfinialized pointers:\n");
+	printf("\nMutator:\nfinialized pointers[%d]:\n", finalized_ptr_i);
 	for(int i=0; i<finalized_ptr_i; i++)
 		printf("Finilized ptr -> %p\n", finalized_ptrs[i]);
 }
