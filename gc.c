@@ -37,8 +37,8 @@ typedef struct node{
 Node heap[2*HEAP_SIZE] = {0};
 Node *from_start = &heap[0], *from_hp= &heap[0], *to_start = &heap[HEAP_SIZE], *to_hp = &heap[HEAP_SIZE], *to_mem_end = &heap[2*HEAP_SIZE];
 
-Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finilized_ptrs[ROOTS_N], *big_data[ROOTS_N];
-int roots_i=0, other_ptr_i=0, finilized_ptr_i=0, big_data_i=0;
+Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finalized_ptrs[ROOTS_N], *big_data[ROOTS_N];
+int roots_i=0, other_ptr_i=0, finalized_ptr_i=0, big_data_i=0;
 
 int gc_counter = 0;
 
@@ -71,13 +71,13 @@ Node* add_lambda(intptr_t id, intptr_t n, Node **nodes);
 Node* add_node(char type, void* value);
 void copy_node(Node *dst, Node*src);
 void add_root(Node *ptr);
-void finilize_ptr(Node *node);
+void finalize_ptr(Node *node);
 
 //debugging functions
 void print_nodes(Node *node, Node *end_node);
 void print_roots();
 void print_other_ptrs();
-void print_finilized_ptrs();
+void print_finalized_ptrs();
 void print_big_data();
 void print_mem_state();
 void print_gc_state();
@@ -105,7 +105,7 @@ void gc()
 {
 	//init
 	gc_counter++;
-	finilized_ptr_i = 0;
+	finalized_ptr_i = 0;
 	big_data_i = 0;
 
 	minor_collection();
@@ -116,7 +116,7 @@ void gc()
 	from_hp = from_start;  //forget about any old data put in from_space
 
 	//print and clear gc state
-	printf("\nGC state:\n");
+	printf("\n[DEBUG]GC state:\n");
 	print_gc_state();
 	other_ptr_i = 0;
 }
@@ -138,10 +138,10 @@ void major_collection(){
 	big_data_i =0; other_ptr_i = 0;
 	collection(to_start);
 
-	//update positions of finilized ptrs
-	for(int i=0; i<finilized_ptr_i; i++)
-		if(finilized_ptrs[i]->tag == CFWD_PTR)
-			finilized_ptrs[i] = finilized_ptrs[i]->value;
+	//update positions of finailized ptrs
+	for(int i=0; i<finalized_ptr_i; i++)
+		if(finalized_ptrs[i]->tag == CFWD_PTR)
+			finalized_ptrs[i] = finalized_ptrs[i]->value;
 }
 
 void collection(Node *old_to_hp)
@@ -268,10 +268,10 @@ void scaveneging(Node *node, Node *end_node)
 			}
 		}
 
-		//finilized phantom pointers
+		//finalized phantom pointers
 		if(node->tag == CPHANTOM_PTR_F && node->value != CNULL){
 			node->value = CNULL;
-			finilized_ptrs[finilized_ptr_i++] = node;
+			finalized_ptrs[finalized_ptr_i++] = node;
 		}
 
 		//big data
@@ -398,7 +398,7 @@ void add_root(Node* ptr)
 	roots_i++;
 }
 
-void finilize_ptr(Node* node)
+void finalize_ptr(Node* node)
 {
 	node->tag = CPHANTOM_PTR_F;
 }
@@ -412,12 +412,12 @@ void finilize_ptr(Node* node)
 int main(void)
 {
 	test_case10();
-	printf("After data initialization:\n");
+	printf("[DEBUG]After data initialization:\n");
 	print_mem_state();
 
 	for(int i=0; i<4; i++){
 		gc();
-		printf("\n\nAfter %d collection:\n", i+1);
+		printf("\n\n[DEBUG]After %d collection:\n", i+1);
 		print_mem_state();
 	}
 	return 1;
@@ -440,7 +440,7 @@ void print_mem_state()
 	printf("big data:\n");
 	print_big_data();
 	printf("finialized pointers:\n");
-	print_finilized_ptrs();	
+	print_finalized_ptrs();	
 }
 
 void print_gc_state()
@@ -506,7 +506,7 @@ void print_nodes(Node *node, Node *end_node)
 				printf("Phantom ptr(not-finlized): %p\n", node->value);
 				break;	
 			case CPHANTOM_PTR_F:
-				printf("Phantom ptr(finilized): %p\n", node->value);
+				printf("Phantom ptr(finalized): %p\n", node->value);
 				break;	
 
 			//big data
@@ -546,10 +546,10 @@ void print_other_ptrs()
 	}
 }
 
-void print_finilized_ptrs()
+void print_finalized_ptrs()
 {
-	for(int i=0; i<finilized_ptr_i; i++)
-		printf("Finilized ptr -> %p\n", finilized_ptrs[i]);
+	for(int i=0; i<finalized_ptr_i; i++)
+		printf("Finilized ptr -> %p\n", finalized_ptrs[i]);
 }
 
 void print_big_data()
@@ -638,7 +638,7 @@ void test_case10() //phantom pointers
 	Node *node1 = add_int(10);
 	Node *node2 = add_int(11);
 	Node *phantom_node = add_phantom_ptr(node1);
-	finilize_ptr(phantom_node);
+	finalize_ptr(phantom_node);
 	add_root(phantom_node);
 	add_root(add_phantom_ptr(node2));
 }
