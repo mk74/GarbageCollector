@@ -45,7 +45,9 @@ int gc_counter = 0;
 //main GC funcitons
 void gc();
 void change_spaces();
-void collection();
+void minor_collection();
+void major_collection();
+void collection(Node *old_to_hp);
 Node* evacuate(Node *node);
 void traverse_roots();
 void traverse_other_ptrs();
@@ -106,31 +108,24 @@ void gc()
 	finilized_ptr_i = 0;
 	big_data_i = 0;
 
-	//minor collection
-	collection(to_hp);
-	if(gc_counter==2){
-		//major collection
-		///XXX get rid of
-		printf("\nMajor collection is happening!\n");
-		printf("finialized pointers:\n");
-		print_finilized_ptrs();	
-		
-		change_spaces();
-
-		finilized_ptr_i = 0; big_data_i =0; other_ptr_i = 0;
-		collection(to_start);
+	minor_collection();
+	if(gc_counter==1){
+		major_collection();
 		gc_counter = 0;
 	}
-	from_hp = from_start;
+	from_hp = from_start;  //forget about any old data put in from_space
 
-	//print/clear gc state
+	//print and clear gc state
 	printf("\nGC state:\n");
 	print_gc_state();
 	other_ptr_i = 0;
 }
 
-void change_spaces()
-{
+void minor_collection(){
+	collection(to_hp);
+}
+
+void major_collection(){
 	//switch from/to spaces: swap from_start with to_start, set from_hp and to_hp
 	Node *tmp = from_start;
 	from_start = to_start;
@@ -138,6 +133,15 @@ void change_spaces()
 	from_hp = to_hp;
 	to_hp = to_start;
 	to_mem_end = to_start + HEAP_SIZE;
+
+	//init collection and collect
+	big_data_i =0; other_ptr_i = 0;
+	collection(to_start);
+
+	//finilized ptrs are moved so needs to update info on them
+	for(int i=0; i<finilized_ptr_i; i++)
+		if(finilized_ptrs[i]->tag == CFWD_PTR)
+			finilized_ptrs[i] = finilized_ptrs[i]->value;
 }
 
 void collection(Node *old_to_hp)
@@ -407,7 +411,7 @@ void finilize_ptr(Node* node)
 
 int main(void)
 {
-	test_case4();
+	test_case10();
 	printf("After data initialization:\n");
 	print_mem_state();
 
