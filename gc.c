@@ -108,6 +108,10 @@ void test_case11();
 
 void test_heap1_start();
 void test_heap1_continue();
+void test_heap2_start();
+void test_heap2_continue();
+void test_heap3_start();
+void test_heap3_continue();
 
 
 //------------------------------------------------------------------------------------------
@@ -443,13 +447,17 @@ void finalize_ptr(Node* node)
 
 int main(int argc, char *argv[])
 {
+	int collections_n = 30;
 	if(argc>1)
 		generational_gc = (atoi(argv[1]) == 1)	? true : false;
+	if(argc>2)
+		collections_n = atoi(argv[2]);
+
 	mutator_start();
 	printf("[DEBUG]After data initialization:\n");
 	print_mem_state();
 
-	for(int i=0; i<5; i++){
+	for(int i=0; i<collections_n; i++){
 		collector();
 		printf("\n\n[DEBUG]After %d collection:\n", i+1);
 		print_mem_state();
@@ -464,15 +472,14 @@ int main(int argc, char *argv[])
 
 void mutator_start(){
 	//the heap initialization
-	//test_case9();
-	test_heap1_start();
+	test_heap3_start();
 }
 
 void mutator_continue(){
 	//finalized could be passed to this funciton, instead of being kept as global variable
 	print_finalized_ptrs();	
 
-	test_heap1_continue();
+	test_heap3_continue();
 	//new operations changing the heap
 
 }
@@ -485,9 +492,9 @@ void mutator_continue(){
 
 void print_mem_state()
 {
-	printf("from_space: %p-%p\n", from_start, from_hp);
+	printf("from_space[%ld]: %p-%p\n", (from_hp-from_start), from_start, from_hp);
 	print_nodes(from_start, from_hp);
-	printf("to_space: %p-%p END: %p\n", to_start, to_hp, to_mem_end);
+	printf("to_space[%ld]: %p-%p END: %p\n", (to_hp-to_start), to_start, to_hp, to_mem_end);
 	print_nodes(to_start, to_hp);
 	print_roots();
 	print_big_data();
@@ -713,17 +720,19 @@ void test_case11() // big data
 }
 
 
+//------------------------------------------------------------------------------------------
+// Test heaps
+//------------------------------------------------------------------------------------------
 
 
+//adding element at the beginning of linked list
 void test_heap1_start()
 {
-	//linked list beginning
 	add_str("foo");
 	add_str("bar");
 	add_bool(true);
 	Node* nodes[] = {add_int(10), add_node(CNULL, NULL)};
 	add_root(add_data(1, 2, nodes));
-
 }
 
 void test_heap1_continue()
@@ -733,4 +742,41 @@ void test_heap1_continue()
 	add_bool(true);
 	Node* nodes[] = {add_int(10), roots[roots_i-1]};
 	roots[roots_i-1] = add_data(1, 2, nodes);
+}
+
+
+// calculating something in loop(using range)
+// building lambda function
+// keeping result of this lambda function and arguments as big data
+// phantom pointer to that big data
+void test_heap2_start()
+{
+	add_range(add_int(0), add_int(5));
+	Node* nodes[6];
+	for(int i=0; i<5; i++)
+		nodes[i] = add_int(10 +i);
+	add_lambda(7, 5, nodes);
+	nodes[5] = add_int(100);
+	Node *big_data = add_big_data(6, 5, nodes);
+	add_root(add_phantom_ptr(big_data));
+}
+
+void test_heap2_continue()
+{
+	finalize_ptr(roots[roots_i-1]);
+	test_heap2_start();
+}
+
+
+//caching results if there is space available
+void test_heap3_start()
+{
+	Node *ptr = add_str("Cached data");
+	add_root(add_soft_ptr(ptr));
+	add_root(add_weak_ptr(ptr));
+}
+
+void test_heap3_continue()
+{
+	test_heap3_start();
 }
