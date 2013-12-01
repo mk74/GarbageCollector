@@ -42,6 +42,10 @@ int roots_i=0, other_ptr_i=0, finalized_ptr_i=0, big_data_i=0;
 
 int collector_counter = 0;
 
+//mutator
+void mutator_start();
+void mutator_continue();
+
 //main GC funcitons
 void collector();
 void change_spaces();
@@ -401,13 +405,13 @@ void finalize_ptr(Node* node)
 
 
 //------------------------------------------------------------------------------------------
-// Main function
+// Main function + mutator
 //------------------------------------------------------------------------------------------
 
 
 int main(void)
 {
-	test_case10();
+	mutator_start();
 	printf("[DEBUG]After data initialization:\n");
 	print_mem_state();
 
@@ -415,8 +419,21 @@ int main(void)
 		collector();
 		printf("\n\n[DEBUG]After %d collection:\n", i+1);
 		print_mem_state();
+
+		mutator_continue();
 	}
 	return 1;
+}
+
+void mutator_start(){
+	test_case10();
+}
+
+void mutator_continue(){
+	//finalized should be passed to this funciton, instead of being kept as global variable
+	print_finalized_ptrs();	
+
+	//new operations changing the heap
 }
 
 
@@ -431,15 +448,8 @@ void print_mem_state()
 	print_nodes(from_start, from_hp);
 	printf("to_space: %p-%p END: %p\n", to_start, to_hp, to_mem_end);
 	print_nodes(to_start, to_hp);
-	printf("roots:\n");
 	print_roots();
 	print_big_data();
-	print_finalized_ptrs();	
-}
-
-void print_collector_state()
-{
-	print_other_ptrs();
 }
 
 void print_nodes(Node *node, Node *end_node)
@@ -525,6 +535,9 @@ void print_nodes(Node *node, Node *end_node)
 
 void print_roots()
 {
+	if(roots_i==0)
+		return;
+	printf("roots:\n");
 	for(int i=0; i<roots_i; i++)
 		printf("Root -> %p\n", roots[i]);
 }
@@ -546,7 +559,7 @@ void print_finalized_ptrs()
 {
 	if(finalized_ptr_i==0)
 		return;
-	printf("finialized pointers:\n");
+	printf("\nMutator:\nfinialized pointers:\n");
 	for(int i=0; i<finalized_ptr_i; i++)
 		printf("Finilized ptr -> %p\n", finalized_ptrs[i]);
 }
