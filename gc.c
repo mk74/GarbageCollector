@@ -126,7 +126,7 @@ void minor_collection(){
 }
 
 void major_collection(){
-	//switch from/to spaces: swap from_start with to_start, set from_hp and to_hp
+	//switch from_space and to_space: swap from_start with to_start, set from_hp and to_hp
 	Node *tmp = from_start;
 	from_start = to_start;
 	to_start = tmp;
@@ -138,7 +138,7 @@ void major_collection(){
 	big_data_i =0; other_ptr_i = 0;
 	collection(to_start);
 
-	//finilized ptrs are moved so needs to update info on them
+	//update positions of finilized ptrs
 	for(int i=0; i<finilized_ptr_i; i++)
 		if(finilized_ptrs[i]->tag == CFWD_PTR)
 			finilized_ptrs[i] = finilized_ptrs[i]->value;
