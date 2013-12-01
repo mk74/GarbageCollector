@@ -80,7 +80,6 @@ void print_big_data();
 void print_mem_state();
 void print_gc_state();
 
-
 //test units
 void test_case1();
 void test_case2();
