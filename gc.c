@@ -359,7 +359,7 @@ Node* add_data(intptr_t c, int n, Node **nodes)
 
 Node* add_big_data(intptr_t n, intptr_t c, Node **nodes)
 {
-	//construct big data out of deafult heap
+	//construct big data outside of the heap
 	Node *big_data = malloc(sizeof(Node) * (n+2) );
 	big_data[0]= (Node){CBDATA_HEAD_N, (void *)n};
 	big_data[1]= (Node){CBDATA_HEAD_C, (void *)c};
@@ -426,14 +426,16 @@ int main(void)
 }
 
 void mutator_start(){
+	//the heap initialization
 	test_case10();
 }
 
 void mutator_continue(){
-	//finalized should be passed to this funciton, instead of being kept as global variable
+	//finalized could be passed to this funciton, instead of being kept as global variable
 	print_finalized_ptrs();	
 
 	//new operations changing the heap
+
 }
 
 
