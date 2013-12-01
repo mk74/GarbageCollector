@@ -141,11 +141,9 @@ void change_spaces()
 
 void collection(Node *old_to_hp)
 {
-
 	//traverse and scavenege roots
 	traverse_roots();
 	scavenege_new(old_to_hp);
-	
 
 	// scavenege big data
 	old_to_hp = to_hp;
@@ -172,13 +170,12 @@ Node* evacuate(Node *node)
 		return node->value;
 	else {
 		//evacuate
+		Node *head_node = to_hp;
 		copy_node(to_hp, node);
 		node->tag = CFWD_PTR;
 		node->value = to_hp++;
 
-		Node *head_node = node->value;
-
-		//data, which occupies more than one node
+		//data, which occupies more than one node:
 
 		//ranges
 		if(head_node->tag == CRANGE){
@@ -220,7 +217,7 @@ void traverse_other_ptrs()
 {
 	for(int i=0; i<other_ptr_i; i++){
 		Node *node = (Node*)(other_ptrs[i]->value);
-		if(node->tag == CFWD_PTR) //something else was referring to that node
+		if(node->tag == CFWD_PTR) //something else was already referring to that node
 			other_ptrs[i]->value = node->value;
 		else{
 			int left_mem = to_mem_end - to_hp;
@@ -235,7 +232,7 @@ void traverse_other_ptrs()
 void scavenege_new(Node *to_new)
 {
 	Node *to_end = to_hp;
-	while(to_new!=to_end){ //kept scavenging as long as new things are added to to_space
+	while(to_new!=to_end){ //kept scavenging as long as new things are added to the end of to_space area
 		scaveneging(to_new, to_end);
 		to_new = to_end;
 		to_end = to_hp;
@@ -413,8 +410,6 @@ int main(void)
 	printf("After data initialization:\n");
 	print_mem_state();
 
-	
-
 	for(int i=0; i<4; i++){
 		gc();
 		printf("\n\nAfter %d collection:\n", i+1);
@@ -445,7 +440,6 @@ void print_mem_state()
 
 void print_gc_state()
 {
-
 	printf("soft pointers to check:\n");
 	print_other_ptrs();
 }
@@ -485,6 +479,7 @@ void print_nodes(Node *node, Node *end_node)
 					printf("Boolean: false\n");
 				break;
 
+			//lambda
 			case CLAMBDA_ID:
 				printf("Lambda function id: %ld\n", (intptr_t)node->value);
 				break;
@@ -495,6 +490,7 @@ void print_nodes(Node *node, Node *end_node)
 				printf("Lambda arg ptr: %p\n", node->value);
 				break;
 
+			//pointers
 			case CWEAK_PTR:
 				printf("Weak pointer: %p\n", node->value);
 				break;
@@ -508,6 +504,7 @@ void print_nodes(Node *node, Node *end_node)
 				printf("Phantom ptr(finilized): %p\n", node->value);
 				break;	
 
+			//big data
 			case CBDATA_PTR:
 				printf("Big data ptr: %p\n", node->value);
 				break;	
