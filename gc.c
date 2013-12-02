@@ -8,7 +8,7 @@
 
 #define HEAP_SIZE  100000
 #define LOW_MEM_THRESHOLD 20
-#define ROOTS_N 50
+#define ROOTS_N 500000
 
 #define CNULL 0
 #define CFWD_PTR 1
@@ -457,7 +457,7 @@ void finalize_ptr(Node* node)
 
 int main(int argc, char *argv[])
 {
-	int collections_n = 30;
+	int collections_n = 0;
 	int heap_case = 0;
 
 	//user's input
