@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HEAP_SIZE  100
+#define HEAP_SIZE  100000
 #define LOW_MEM_THRESHOLD 20
 #define ROOTS_N 50
 
@@ -456,14 +456,15 @@ int main(int argc, char *argv[])
 	mutator_start();
 	printf("[DEBUG]After data initialization:\n");
 	print_mem_state();
+	collector();
 
 	for(int i=0; i<collections_n; i++){
-		collector();
-		printf("\n\n[DEBUG]After %d collection:\n", i+1);
-		print_mem_state();
-
 		mutator_continue();
+		collector();
 	}
+
+	printf("\n\n[DEBUG]After all collections:\n");
+	print_mem_state();
 
 	printf("\n\nTime complexity report:\n");
 	printf("\tScaveneging:\t\t%d\n\tCopying:\t\t%d\n", scaveneging_counter, copy_counter);
@@ -472,14 +473,14 @@ int main(int argc, char *argv[])
 
 void mutator_start(){
 	//the heap initialization
-	test_heap3_start();
+	test_heap1_start();
 }
 
 void mutator_continue(){
 	//finalized could be passed to this funciton, instead of being kept as global variable
 	print_finalized_ptrs();	
 
-	test_heap3_continue();
+	test_heap1_continue();
 	//new operations changing the heap
 
 }
@@ -740,7 +741,7 @@ void test_heap1_continue()
 	add_str("foo");
 	add_str("bar");
 	add_bool(true);
-	Node* nodes[] = {add_int(10), roots[roots_i-1]};
+	Node* nodes[] = {add_int(10), add_ptr(roots[roots_i-1])};
 	roots[roots_i-1] = add_data(1, 2, nodes);
 }
 
