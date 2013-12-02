@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define GENERATIONAL_GC_FREQ 5
+
 #define HEAP_SIZE  100000
 #define LOW_MEM_THRESHOLD 20
 #define ROOTS_N 50
@@ -137,7 +139,7 @@ void collector()
 	if(generational_gc){
 		//generational copying garbage collector
 		minor_collection();
-		if(collector_counter==10){
+		if(collector_counter == GENERATIONAL_GC_FREQ){
 			major_collection();
 			collector_counter = 0;
 		}
