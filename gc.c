@@ -48,7 +48,7 @@ int collector_counter = 0;
 bool generational_gc = false;
 
 //variables for time complexity analysis
-int scaveneging_counter = 0, copy_counter = 0;
+long int scaveneging_counter = 0, copy_counter = 0;
 
 //mutator
 void mutator_start();
@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
 	print_mem_state();
 
 	printf("\n\nTime complexity report:\n");
-	printf("\tScaveneging:\t\t%d\n\tCopying:\t\t%d\n", scaveneging_counter, copy_counter);
+	printf("\tScaveneging:\t\t%ld\n\tCopying:\t\t%ld\n", scaveneging_counter, copy_counter);
 	return 1;
 }
 
