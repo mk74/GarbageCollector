@@ -43,7 +43,7 @@ Node *roots[ROOTS_N], *other_ptrs[ROOTS_N], *finalized_ptrs[ROOTS_N], *big_data[
 int roots_i=0, other_ptr_i=0, finalized_ptr_i=0, big_data_i=0;
 
 int collector_counter = 0;
-bool generational_gc = true;
+bool generational_gc = false;
 
 //variables for time complexity analysis
 int scaveneging_counter = 0, copy_counter = 0;
@@ -112,6 +112,14 @@ void test_heap2_start();
 void test_heap2_continue();
 void test_heap3_start();
 void test_heap3_continue();
+
+//Mutator test cases:
+void (*mutator_starts[])(void) = {test_heap1_start, test_heap2_start, test_heap3_start, test_case1, test_case2, test_case3, test_case4,
+								  test_case5, test_case6, test_case7, test_case8, test_case9, test_case10, test_case11};
+int mutator_starts_n = 14;							
+
+void (*mutator_continues[])(void) = {test_heap1_continue, test_heap2_continue, test_heap3_continue};
+int mutator_continues_n = 3;
 
 
 //------------------------------------------------------------------------------------------
@@ -448,18 +456,23 @@ void finalize_ptr(Node* node)
 int main(int argc, char *argv[])
 {
 	int collections_n = 30;
+	int heap_case = 0;
+
+	//user's input
 	if(argc>1)
-		generational_gc = (atoi(argv[1]) == 1)	? true : false;
+		heap_case = atoi(argv[1]);
 	if(argc>2)
+		generational_gc = (atoi(argv[1]) == 1)	? true : false;
+	if(argc>3)
 		collections_n = atoi(argv[2]);
 
-	mutator_start();
+	mutator_start(heap_case);
 	printf("[DEBUG]After data initialization:\n");
 	print_mem_state();
 	collector();
 
 	for(int i=0; i<collections_n; i++){
-		mutator_continue();
+		mutator_continue(heap_case);
 		collector();
 	}
 
@@ -471,17 +484,18 @@ int main(int argc, char *argv[])
 	return 1;
 }
 
-void mutator_start(){
+void mutator_start(int heap_case){
 	//the heap initialization
-	test_heap1_start();
+	if(heap_case<mutator_starts_n)
+		(*mutator_starts[heap_case])();
 }
 
-void mutator_continue(){
+void mutator_continue(int heap_case){
 	//finalized could be passed to this funciton, instead of being kept as global variable
 	print_finalized_ptrs();	
 
-	test_heap1_continue();
-	//new operations changing the heap
+	if(heap_case<mutator_continues_n)
+		(*mutator_continues[heap_case])();
 
 }
 
@@ -735,7 +749,6 @@ void test_heap1_start()
 	Node* nodes[] = {add_int(10), add_node(CNULL, NULL)};
 	add_root(add_data(1, 2, nodes));
 }
-
 void test_heap1_continue()
 {
 	add_str("foo");
@@ -744,7 +757,6 @@ void test_heap1_continue()
 	Node* nodes[] = {add_int(10), add_ptr(roots[roots_i-1])};
 	roots[roots_i-1] = add_data(1, 2, nodes);
 }
-
 
 // calculating something in loop(using range)
 // building lambda function
@@ -761,13 +773,11 @@ void test_heap2_start()
 	Node *big_data = add_big_data(6, 5, nodes);
 	add_root(add_phantom_ptr(big_data));
 }
-
 void test_heap2_continue()
 {
 	finalize_ptr(roots[roots_i-1]);
 	test_heap2_start();
 }
-
 
 //caching results if there is space available
 void test_heap3_start()
@@ -776,7 +786,6 @@ void test_heap3_start()
 	add_root(add_soft_ptr(ptr));
 	add_root(add_weak_ptr(ptr));
 }
-
 void test_heap3_continue()
 {
 	test_heap3_start();
