@@ -462,9 +462,9 @@ int main(int argc, char *argv[])
 	if(argc>1)
 		heap_case = atoi(argv[1]);
 	if(argc>2)
-		generational_gc = (atoi(argv[1]) == 1)	? true : false;
+		generational_gc = (atoi(argv[2]) == 1)	? true : false;
 	if(argc>3)
-		collections_n = atoi(argv[2]);
+		collections_n = atoi(argv[3]);
 
 	mutator_start(heap_case);
 	printf("[DEBUG]After data initialization:\n");
