@@ -6,7 +6,7 @@
 
 #define GENERATIONAL_GC_FREQ 5
 
-#define HEAP_SIZE  100000
+#define HEAP_SIZE  1000000
 #define LOW_MEM_THRESHOLD 20
 #define ROOTS_N 500000
 
